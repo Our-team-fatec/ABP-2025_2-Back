@@ -9,6 +9,8 @@ const config: Config = {
   },
   moduleFileExtensions: ["ts", "js", "json"],
   clearMocks: true,
+  setupFilesAfterEnv: [],
+  testTimeout: 30000,
 };
 
 export default config;

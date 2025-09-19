@@ -2,33 +2,33 @@ name: Pipeline de CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
-    types: [ opened, synchronize, reopened ]
+    branches: [main, develop]
+    types: [opened, synchronize, reopened]
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: "18"
 
 jobs:
   # Job 1: Validação de qualidade de código (lint)
   code-quality:
     name: Análise de Qualidade do Código
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Fazer checkout do código
         uses: actions/checkout@v4
-        
+
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
+          cache: "npm"
+
       - name: Instalar dependências
         run: npm ci
-        
+
       - name: Executar lint do código
         run: |
           if [ -f .eslintrc.js ] || [ -f .eslintrc.json ] || [ -f eslint.config.js ] || [ -f eslint.config.cjs ]; then
@@ -42,40 +42,40 @@ jobs:
     name: Executar Testes
     runs-on: ubuntu-latest
     needs: code-quality
-    
+
     steps:
       - name: Fazer checkout do código
         uses: actions/checkout@v4
-        
+
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
+          cache: "npm"
+
       - name: Instalar dependências
         run: npm ci
-        
+
       - name: Iniciar serviços de teste
         run: |
           docker compose -f docker-compose.test.yml up -d 2>/dev/null || docker-compose -f docker-compose.test.yml up -d
-          
+
       - name: Aguardar serviços ficarem prontos
         run: |
           echo "Aguardando MongoDB ficar pronto..."
           timeout 60s bash -c 'until docker exec mongodb-test mongosh --eval "db.adminCommand(\"ping\")" --quiet; do sleep 2; done'
-          
+
       - name: Executar testes unitários
         run: npm run test:unit
         env:
           NODE_ENV: test
-          
+
       - name: Executar testes de integração
         run: npm run test:integration
         env:
           NODE_ENV: test
           TEST_MONGODB_URI: mongodb://test:test123@localhost:27018/test_db?authSource=admin
-          
+
       - name: Parar serviços de teste
         if: always()
         run: docker compose -f docker-compose.test.yml down -v 2>/dev/null || docker-compose -f docker-compose.test.yml down -v
@@ -85,20 +85,20 @@ jobs:
     name: Build da Aplicação
     runs-on: ubuntu-latest
     needs: [code-quality, tests]
-    
+
     steps:
       - name: Fazer checkout do código
         uses: actions/checkout@v4
-        
+
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
+          cache: "npm"
+
       - name: Instalar dependências
         run: npm ci
-        
+
       - name: Fazer build da aplicação
         run: |
           if npm run build 2>/dev/null; then
@@ -107,7 +107,7 @@ jobs:
             echo "npm run build não disponível, usando compilador TypeScript diretamente"
             npx tsc
           fi
-          
+
       - name: Verificar arquivos de build
         run: |
           if [ -d "dist" ]; then
@@ -123,18 +123,18 @@ jobs:
     name: Build Docker
     runs-on: ubuntu-latest
     needs: [build]
-    
+
     steps:
       - name: Fazer checkout do código
         uses: actions/checkout@v4
-        
+
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
+
       - name: Build da imagem Docker
         run: |
           docker build -t abp-2025-back:test .
-          
+
       - name: Testar imagem Docker
         run: |
           # Iniciar container em background
@@ -143,16 +143,16 @@ jobs:
             -e MONGODB_URI=mongodb://test:test123@localhost:27017/test_db \
             -p 3000:3000 \
             abp-2025-back:test
-          
+
           # Aguardar container iniciar
           sleep 10
-          
+
           # Verificar se o container está rodando
           docker ps | grep test-container
-          
+
           # Verificar logs
           docker logs test-container
-          
+
           # Limpar
           docker stop test-container
           docker rm test-container

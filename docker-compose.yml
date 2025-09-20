@@ -2,21 +2,30 @@ version: "3.9"
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: davinci_app
-    restart: always
+    restart: unless-stopped
     ports:
-      - "${PORT}:3000"
+      - "${PORT:-3000}:3000"
     env_file:
       - .env
+    volumes:
+      - ./src:/app/src:cached
+      - ./package.json:/app/package.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - /app/node_modules
     depends_on:
       - postgres
     command: sh -c "npx prisma migrate deploy && npm run dev"
+    networks:
+      - app-network
 
   postgres:
     image: postgres:15
-    container_name: postgres_db
-    restart: always
+    container_name: davinci_postgres
+    restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
@@ -25,6 +34,12 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

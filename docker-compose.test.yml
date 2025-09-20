@@ -2,7 +2,9 @@ version: "3.9"
 
 services:
   app_test:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: davinci_app_test
     restart: "no"
     env_file:
@@ -10,11 +12,18 @@ services:
     depends_on:
       - postgres_test
     command: sh -c "npx prisma migrate deploy && npm test"
+    networks:
+      - test-network
+    volumes:
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - /app/node_modules
 
   postgres_test:
     image: postgres:15
-    container_name: postgres_db_test
-    restart: always
+    container_name: davinci_postgres_test
+    restart: unless-stopped
     ports:
       - "5433:5432" # Porta diferente da dev
     environment:
@@ -23,6 +32,12 @@ services:
       POSTGRES_DB: ${POSTGRES_TEST_DB}
     volumes:
       - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - test-network
 
 volumes:
   postgres_test_data:
+
+networks:
+  test-network:
+    driver: bridge

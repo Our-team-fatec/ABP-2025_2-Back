@@ -13,7 +13,14 @@
     "test:integration": "jest --testPathPatterns=\"integration.test.ts\"",
     "test:ci": "jest --ci --coverage --watchAll=false",
     "lint": "eslint src/**/*.ts __tests__/**/*.ts jest.config.ts",
-    "lint:fix": "eslint src/**/*.ts __tests__/**/*.ts jest.config.ts --fix"
+    "lint:fix": "eslint src/**/*.ts __tests__/**/*.ts jest.config.ts --fix",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev --name init",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:reset": "prisma migrate reset --force",
+    "prisma:studio": "prisma studio",
+    "prisma:validate": "prisma validate",
+    "prisma:format": "prisma format"
   },
   "repository": {
     "type": "git",
@@ -28,9 +35,11 @@
   },
   "homepage": "https://github.com/Our-team-fatec/ABP-2025_2-Back#readme",
   "dependencies": {
+    "@prisma/client": "^6.16.2",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "mongoose": "^8.18.1"
+    "mongoose": "^8.18.1",
+    "prisma": "^6.16.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",

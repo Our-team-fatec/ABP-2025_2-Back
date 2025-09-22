@@ -1,31 +1,22 @@
-# Use Node.js 18 como base
+# Base
 FROM node:18-alpine
 
-# Definir diretório de trabalho
+# Diretório da aplicação
 WORKDIR /app
 
-# Copiar package.json e package-lock.json (se existir)
+# Copiar package.json e instalar dependências
 COPY package*.json ./
+RUN npm install
 
-# Instalar dependências
-RUN npm ci --only=production && npm cache clean --force
-
-# Instalar dependências de desenvolvimento para o ts-node-dev
-RUN npm install -D ts-node-dev typescript @types/node
-
-# Copiar código fonte
+# Copiar o restante do código
 COPY . .
 
-# Criar usuário não-root para segurança
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
-
-# Dar permissões ao usuário
-RUN chown -R nextjs:nodejs /app
-USER nextjs
+# Gerar cliente do Prisma
+RUN npx prisma generate
 
 # Expor porta
 EXPOSE 3000
 
-# Comando para desenvolvimento (com hot reload)
+# Comando padrão
 CMD ["npm", "run", "dev"]
+    

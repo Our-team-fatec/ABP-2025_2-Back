@@ -37,11 +37,26 @@ jobs:
             echo "ESLint não configurado, pulando verificação de lint"
           fi
 
-  # Job 2: Testes unitários e de integração
+  # Job 2: Testes unitários e de integração com Docker + Postgres
   tests:
     name: Executar Testes
     runs-on: ubuntu-latest
     needs: code-quality
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: supersecurepassword
+          POSTGRES_DB: davinci_pets
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Fazer checkout do código
@@ -56,29 +71,27 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
-      - name: Iniciar serviços de teste
-        run: |
-          docker compose -f docker-compose.test.yml up -d 2>/dev/null || docker-compose -f docker-compose.test.yml up -d
+      - name: Gerar Prisma Client
+        run: npm run prisma:generate
+        env:
+          DATABASE_URL: postgresql://postgres:supersecurepassword@localhost:5432/davinci_pets?schema=public
 
-      - name: Aguardar serviços ficarem prontos
-        run: |
-          echo "Aguardando MongoDB ficar pronto..."
-          timeout 60s bash -c 'until docker exec mongodb-test mongosh --eval "db.adminCommand(\"ping\")" --quiet; do sleep 2; done'
+      - name: Rodar migrações no banco de teste
+        run: npm run prisma:migrate:deploy
+        env:
+          DATABASE_URL: postgresql://postgres:supersecurepassword@localhost:5432/davinci_pets?schema=public
 
       - name: Executar testes unitários
         run: npm run test:unit
         env:
           NODE_ENV: test
+          DATABASE_URL: postgresql://postgres:supersecurepassword@localhost:5432/davinci_pets?schema=public
 
       - name: Executar testes de integração
         run: npm run test:integration
         env:
           NODE_ENV: test
-          TEST_MONGODB_URI: mongodb://test:test123@localhost:27018/test_db?authSource=admin
-
-      - name: Parar serviços de teste
-        if: always()
-        run: docker compose -f docker-compose.test.yml down -v 2>/dev/null || docker-compose -f docker-compose.test.yml down -v
+          DATABASE_URL: postgresql://postgres:supersecurepassword@localhost:5432/davinci_pets?schema=public
 
   # Job 3: Build da aplicação
   build:
@@ -132,27 +145,26 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build da imagem Docker
-        run: |
-          docker build -t abp-2025-back:test .
+        run: docker build -t abp-2025-back:test .
 
       - name: Testar imagem Docker
         run: |
-          # Iniciar container em background
           docker run -d --name test-container \
             -e PORT=3000 \
-            -e MONGODB_URI=mongodb://test:test123@localhost:27017/test_db \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=supersecurepassword \
+            -e POSTGRES_DB=davinci_pets \
+            -e POSTGRES_HOST=localhost \
+            -e POSTGRES_PORT=5432 \
+            -e DATABASE_URL=postgresql://postgres:supersecurepassword@postgres:5432/davinci_pets?schema=public \
             -p 3000:3000 \
             abp-2025-back:test
 
           # Aguardar container iniciar
           sleep 10
 
-          # Verificar se o container está rodando
-          docker ps | grep test-container
-
-          # Verificar logs
+          docker ps | grep test-container || exit 1
           docker logs test-container
 
-          # Limpar
           docker stop test-container
           docker rm test-container

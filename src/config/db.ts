@@ -19,7 +19,7 @@ export async function connectDB(): Promise<void> {
     console.log("✅ Conexão com banco estabelecida via Prisma");
   } catch (error) {
     console.error("❌ Erro ao conectar ao banco:", error);
-    process.exit(1); // encerra aplicação se não conseguir conectar
+    process.exit(1); 
   }
 }
 

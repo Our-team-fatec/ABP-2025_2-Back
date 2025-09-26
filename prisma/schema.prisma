@@ -13,4 +13,623 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }   
-    
+
+
+enum Especie {
+  CACHORRO
+  GATO
+}
+
+enum Area {
+  SERVICOS
+  ADOCOES
+  COMUNIDADE
+}
+
+enum TipoRegistro {
+  CONSULTA
+  EXAME
+  CIRURGIA
+  MEDICACAO
+  EMERGENCIA
+  ROTINA
+}
+
+enum TipoResidencia {
+  CASA
+  APARTAMENTO
+  SITIO
+  CHACARA
+}
+
+enum GrupoUsuario {
+  DOADOR
+  TREINADOR
+  AMBOS
+}
+
+enum StatusAdocao {
+  EM_ANDAMENTO
+  CONCLUIDA
+  CANCELADA
+}
+
+enum TipoPost {
+  VENDA
+  SERVICO
+  PERDIDO
+  ACHADO
+  DOACAO
+  URGENTE
+  DICA
+  EXPERIENCIA
+  PERGUNTA
+}
+
+enum StatusPost {
+  ATIVO
+  INATIVO
+  REMOVIDO
+  RESOLVIDO
+}
+
+enum TipoGrupo {
+  PUBLICO
+  PRIVADO
+}
+
+enum CategoriaForum {
+  ALIMENTACAO
+  SAUDE
+  COMPORTAMENTO
+  ADESTRAMENTO
+  GERAL
+}
+
+enum CategoriaBug {
+  BUG_ERRO
+  INTERFACE
+  PERFORMANCE
+  FUNCIONALIDADE
+  SINCRONIZACAO
+  SEGURANCA
+}
+
+enum PrioridadeBug {
+  BAIXA
+  MEDIA
+  ALTA
+  CRITICA
+}
+
+enum StatusBug {
+  ABERTO
+  EM_ANALISE
+  EM_DESENVOLVIMENTO
+  RESOLVIDO
+  FECHADO
+  REJEITADO
+}
+     
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique  
+  endereco  String
+  grupo     Int @default(0) // 0 = USUARIO, 1 = MODERADOR, 2 = ADMIN
+  senha     String
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  removidoEm  DateTime? 
+  
+  // Relacionamentos existentes
+  pets Pet[]
+  adocoes Adocao[]
+  servicos Servicos[]
+  avaliacoes Avaliacoes[]
+  formularios Formularios[]
+  imagens Imagens[]
+  historicoAdocoesComoUserAnterior HistoricoAdocoes[] @relation("DonoAnterior")
+  historicoAdocoesComoNovoUser HistoricoAdocoes[] @relation("NovoDono")
+  
+  // Novos relacionamentos da comunidade
+  posts Posts[]
+  topicosForum TopicosForum[]
+  gruposAdmin Grupos[] @relation("AdminGrupo")
+  gruposMembro GrupoMembros[]
+  postCurtidas PostCurtidas[]
+  postComentarios PostComentarios[]
+  postCompartilhamentos PostCompartilhamentos[]
+  respostasTopicos RespostasTopicosForum[]
+  curtidasTopicos CurtidasTopicos[]
+  
+  // Sistema de bugs
+  relatoriosBugs RelatorioBugs[]
+  
+  @@index([email])
+  @@index([removidoEm])
+}
+
+
+model Pet {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  nome      String 
+  especie   Especie
+  raca      String
+  idade     Int
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  removidoEm  DateTime?
+  
+  adocoes Adocao[]
+  vacinas VacinasPet[]
+  registros Registros[]
+  formularios Formularios[]
+  imagens Imagens[]
+  historicoAdocoes HistoricoAdocoes[]
+  posts Posts[] // Posts relacionados ao pet
+  
+  @@index([userId])
+  @@index([especie])
+  @@index([removidoEm])
+}
+
+model Categoria {
+  id        String   @id @default(uuid())
+  cor      String   @unique
+  texto      String  
+  area String 
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  removidoEm  DateTime?
+
+  servicos Servicos[]
+}
+
+model Servicos {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  categoriaId String
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+  disponivel Boolean @default(true)
+  titulo    String 
+  local     String
+  contato   String
+  horario   String
+  preco     String
+  descricao String
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  removidoEm  DateTime?
+  
+  avaliacoes Avaliacoes[]
+  imagens Imagens[]
+  
+  @@index([userId])
+  @@index([categoriaId])
+  @@index([disponivel])
+} 
+
+model Imagens {
+  id        String   @id @default(uuid())
+  url       String
+  titulo    String?
+  descricao String?
+  // Relacionamentos opcionais para diferentes entidades
+  petId     String?
+  pet       Pet?     @relation(fields: [petId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  servicoId String?
+  servico   Servicos? @relation(fields: [servicoId], references: [id])
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  removidoEm  DateTime?
+  
+  @@index([petId])
+  @@index([userId])
+  @@index([servicoId])
+}
+
+model VacinasPet {
+  id        String   @id @default(uuid())
+  petId     String
+  pet       Pet      @relation(fields: [petId], references: [id])
+  nome      String   // Nome da vacina
+  prazo     Int      // Prazo em dias/meses
+  ultimaAplicacao DateTime?
+  proximaDose DateTime?
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  removidoEm  DateTime?
+}
+
+model Registros {
+  id        String   @id @default(uuid())
+  petId     String
+  pet       Pet      @relation(fields: [petId], references: [id])
+  tipoRegistrado TipoRegistro
+  titulo    String
+  dataProcodimento DateTime
+  proximoAgendamento DateTime?
+  veterinario String
+  clinica   String
+  custo     Float?
+  medicamentos String?
+  observacoes String?
+  imagemId  String?
+  criadoEm  DateTime @default(now())
+  removidoEm  DateTime?
+  atualizadoEm DateTime @updatedAt
+  
+  @@index([petId])
+  @@index([dataProcodimento])
+}
+
+model Avaliacoes {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  servicoId String
+  servico   Servicos @relation(fields: [servicoId], references: [id])
+  estrelas  Int      @default(0) // 0 a 5 estrelas
+  criadoEm  DateTime @default(now())
+  removidoEm  DateTime?
+}
+
+model HistoricoAdocoes {
+  id        String   @id @default(uuid())
+  petId     String
+  pet       Pet      @relation(fields: [petId], references: [id])
+  userAnteriorId String?
+  userAnterior   User? @relation("DonoAnterior", fields: [userAnteriorId], references: [id])
+  novoUserId     String?
+  novoUser       User? @relation("NovoDono", fields: [novoUserId], references: [id])
+  dataAdocao     DateTime
+  motivoAdocao   String?
+  observacoes    String?
+  status         StatusAdocao @default(EM_ANDAMENTO)
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  removidoEm  DateTime?
+  
+  @@index([petId])
+  @@index([dataAdocao])
+  @@index([status])
+}
+
+model Adocao{
+  id        String   @id @default(uuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id])
+  petId   String
+  pet     Pet     @relation(fields: [petId], references: [id])
+  descricao String
+  local String
+  criadoEm DateTime @default(now())
+  finalizadoEm DateTime?
+  atualizadoEm DateTime @updatedAt
+  removidoEm  DateTime?
+  
+  formularios Formularios[]
+}
+
+model Formularios {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  adocaoId  String?
+  adocao    Adocao?  @relation(fields: [adocaoId], references: [id])
+  petId     String?
+  pet       Pet?     @relation(fields: [petId], references: [id])
+  nome      String
+  dataNascimento DateTime?
+  email     String
+  endereco  String
+  residencia TipoResidencia
+  tipoCasa  String   // Detalhes da casa
+  pessoasResidencia Int
+  seguroPet Boolean  @default(false)
+  petsAnteriores String?
+  outrosPets Boolean @default(false)
+  petSozinho Int     // Horas que o pet ficará sozinho
+  cuidadorPet String? // Quem cuidará do pet
+  responsabilidadePet String?
+  termosServico Boolean @default(false)
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  removidoEm  DateTime?
+  
+  @@index([userId])
+  @@index([adocaoId])
+}
+
+model Posts {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  tipo      TipoPost
+  titulo    String
+  descricao String
+  preco     String?   // Para vendas e serviços
+  local     String?   // Localização (São Paulo, SP)
+  contato   String?   // Informações de contato
+  status    StatusPost @default(ATIVO)
+  // Relacionamento com pet (se aplicável)
+  petId     String?
+  pet       Pet?     @relation(fields: [petId], references: [id])
+  // Relacionamento com grupo (se postado em grupo)
+  grupoId   String?
+  grupo     Grupos?  @relation(fields: [grupoId], references: [id])
+  
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  removidoEm  DateTime?
+  
+  // Relacionamentos
+  imagens PostImagens[]
+  curtidas PostCurtidas[]
+  comentarios PostComentarios[]
+  compartilhamentos PostCompartilhamentos[]
+  
+  @@index([userId])
+  @@index([tipo])
+  @@index([status])
+  @@index([grupoId])
+  @@index([criadoEm])
+}
+
+model TopicosForum {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  categoria CategoriaForum
+  titulo    String
+  descricao String
+  fixado    Boolean  @default(false) // Para tópicos fixados como "[FIXADO] Guia completo..."
+  resolvido Boolean  @default(false)
+  visualizacoes Int   @default(0)
+  
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  removidoEm  DateTime?
+  
+  // Relacionamentos
+  respostas RespostasTopicosForum[]
+  curtidas CurtidasTopicos[]
+  
+  @@index([userId])
+  @@index([categoria])
+  @@index([fixado])
+  @@index([resolvido])
+  @@index([criadoEm])
+}
+
+model Grupos {
+  id        String   @id @default(uuid())
+  nome      String
+  descricao String
+  tipo      TipoGrupo @default(PUBLICO)
+  // Administrador do grupo
+  adminId   String
+  admin     User     @relation("AdminGrupo", fields: [adminId], references: [id])
+  // Imagem de capa do grupo
+  imagemCapa String?
+  
+  // Estatísticas
+  totalMembros Int @default(0)
+  ativo     Boolean @default(true)
+  
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  removidoEm  DateTime?
+  
+  // Relacionamentos
+  membros GrupoMembros[]
+  posts   Posts[]
+  
+  @@index([adminId])
+  @@index([tipo])
+  @@index([ativo])
+  @@index([criadoEm])
+}
+
+// Tabelas de relacionamento e interações
+
+model GrupoMembros {
+  id      String @id @default(uuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+  grupoId String
+  grupo   Grupos @relation(fields: [grupoId], references: [id])
+  
+  // Permissões e status
+  moderador Boolean @default(false)
+  ativo     Boolean @default(true)
+  
+  criadoEm DateTime @default(now())
+  
+  @@unique([userId, grupoId])
+  @@index([grupoId])
+  @@index([userId])
+}
+
+model PostImagens {
+  id     String @id @default(uuid())
+  postId String
+  post   Posts  @relation(fields: [postId], references: [id])
+  url    String
+  ordem  Int    @default(0) // Para ordenação das imagens
+  
+  criadoEm DateTime @default(now())
+  
+  @@index([postId])
+}
+
+model PostCurtidas {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  postId String
+  post   Posts  @relation(fields: [postId], references: [id])
+  
+  criadoEm DateTime @default(now())
+  
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model PostComentarios {
+  id        String @id @default(uuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [id])
+  postId    String
+  post      Posts  @relation(fields: [postId], references: [id])
+  conteudo  String
+  
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  removidoEm DateTime?
+  
+  @@index([postId])
+  @@index([userId])
+}
+
+model PostCompartilhamentos {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  postId String
+  post   Posts  @relation(fields: [postId], references: [id])
+  
+  criadoEm DateTime @default(now())
+  
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model RespostasTopicosForum {
+  id       String        @id @default(uuid())
+  userId   String
+  user     User          @relation(fields: [userId], references: [id])
+  topicoId String
+  topico   TopicosForum  @relation(fields: [topicoId], references: [id])
+  conteudo String
+  
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  removidoEm DateTime?
+  
+  @@index([topicoId])
+  @@index([userId])
+}
+
+model CurtidasTopicos {
+  id       String        @id @default(uuid())
+  userId   String
+  user     User          @relation(fields: [userId], references: [id])
+  topicoId String
+  topico   TopicosForum  @relation(fields: [topicoId], references: [id])
+  
+  criadoEm DateTime @default(now())
+  
+  @@unique([userId, topicoId])
+  @@index([topicoId])
+}
+
+// Sistema de Reporte de Bugs
+
+model RelatorioBugs {
+  id            String      @id @default(uuid())
+  // Informações do usuário
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  
+  // Dados do problema (Etapa 1)
+  categoria     CategoriaBug
+  titulo        String
+  descricao     String
+  prioridade    PrioridadeBug
+  
+  // O que deveria acontecer e o que realmente aconteceu (Etapa 2)
+  oQueDeveria   String?
+  oQueAconteceu String?
+  
+  // Status e controle
+  status        StatusBug    @default(ABERTO)
+  numeroTicket  String       @unique // Gerado automaticamente
+  
+  // Timestamps
+  criadoEm      DateTime     @default(now())
+  atualizadoEm  DateTime     @updatedAt
+  resolvidoEm   DateTime?
+  removidoEm    DateTime?
+  
+  // Relacionamentos
+  passos        PassosReproducao[]
+  anexos        AnexosBugs[]
+  informacoesTecnicas InformacoesTecnicas?
+  
+  @@index([userId])
+  @@index([categoria])
+  @@index([status])
+  @@index([prioridade])
+  @@index([criadoEm])
+}
+
+model PassosReproducao {
+  id          String        @id @default(uuid())
+  relatorioId String
+  relatorio   RelatorioBugs @relation(fields: [relatorioId], references: [id], onDelete: Cascade)
+  
+  ordem       Int           // Ordem do passo (1, 2, 3...)
+  descricao   String        // Ex: "Vá para a aba Pets", "Clique no botão '+'"
+  
+  criadoEm    DateTime      @default(now())
+  
+  @@index([relatorioId])
+  @@index([ordem])
+}
+
+model AnexosBugs {
+  id          String        @id @default(uuid())
+  relatorioId String
+  relatorio   RelatorioBugs @relation(fields: [relatorioId], references: [id], onDelete: Cascade)
+  
+  tipo        String        // "screenshot", "video", "log"
+  nomeArquivo String        // Nome original do arquivo
+  url         String        // URL onde o arquivo está armazenado
+  tamanho     Int?          // Tamanho do arquivo em bytes
+  mimeType    String?       // Tipo MIME do arquivo
+  
+  criadoEm    DateTime      @default(now())
+  
+  @@index([relatorioId])
+  @@index([tipo])
+}
+
+model InformacoesTecnicas {
+  id          String        @id @default(uuid())
+  relatorioId String        @unique
+  relatorio   RelatorioBugs @relation(fields: [relatorioId], references: [id], onDelete: Cascade)
+  
+  // Informações do navegador/dispositivo
+  navegador           String?    // Chrome, Safari, Firefox, etc.
+  versaoNavegador     String?    // Versão do navegador
+  sistemaOperacional  String?    // Windows, macOS, iOS, Android
+  versaoSO            String?    // 11, 10.15.7, 14.4, etc.
+  versaoApp           String?    // Versão do PetCare+
+  resolucaoTela       String?    // 1920x1080, etc.
+  userAgent           String?    // User agent completo
+  
+  // Opções de privacidade
+  incluirEmail        Boolean    @default(false)
+  incluirDadosAnonimos Boolean   @default(false)
+  
+  criadoEm    DateTime      @default(now())
+  
+  @@index([relatorioId])
+}

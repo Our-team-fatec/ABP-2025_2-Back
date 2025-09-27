@@ -9,7 +9,7 @@
     "start": "node dist/app.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:unit": "jest --testPathPatterns=\"sum.test.ts\"",
+    "test:unit": "jest --testPathIgnorePatterns=\"integration.test.ts\"",
     "test:integration": "jest --testPathPatterns=\"integration.test.ts\"",
     "test:ci": "jest --ci --coverage --watchAll=false",
     "lint": "eslint src/**/*.ts __tests__/**/*.ts jest.config.ts",

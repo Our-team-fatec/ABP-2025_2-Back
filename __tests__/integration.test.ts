@@ -1,7 +1,7 @@
 import request from "supertest";
 import { PrismaClient } from "../src/generated/prisma";
 import express from "express";
-import healthRouter from "../src/routes/health";
+import healthRouter from "../src/routes/healthRoutes";
 
 const prisma = new PrismaClient();
 

@@ -1,6 +1,5 @@
 import request from "supertest";
 import express from "express";
-import usersRouter from "../src/routes/usersRoutes";
 
 // Mock do Prisma deve vir antes dos imports que usam o Prisma
 const mockPrisma = {
@@ -9,6 +8,10 @@ const mockPrisma = {
     create: jest.fn(),
   },
 };
+
+jest.mock("../src/config/db", () => ({
+  getPrismaClient: () => mockPrisma,
+}));
 
 // Mock do bcrypt para testes de senha
 jest.mock("bcrypt", () => ({
@@ -20,12 +23,9 @@ jest.mock("bcrypt", () => ({
 jest.mock("../src/utils/jwtService", () => ({
   generateToken: jest.fn().mockReturnValue("mock-jwt-token"),
   verifyToken: jest.fn(),
-  extractTokenFromHeader: jest.fn(),
 }));
 
-jest.mock("../src/config/db", () => ({
-  getPrismaClient: () => mockPrisma,
-}));
+import usersRouter from "../src/routes/usersRoutes";
 
 const app = express();
 app.use(express.json());

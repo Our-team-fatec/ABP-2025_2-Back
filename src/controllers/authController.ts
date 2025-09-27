@@ -61,8 +61,8 @@ class AuthController {
           refreshToken,
         }),
       );
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      console.error("Erro ao fazer login:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));
     }
   }
@@ -76,8 +76,8 @@ class AuthController {
       let payload;
       try {
         payload = jwtService.verifyToken(refreshToken);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
-        console.error("Erro ao verificar token:", error);
         return res
           .status(401)
           .json(ResponseHelper.error("Refresh token inválido ou expirado", 401));
@@ -91,8 +91,8 @@ class AuthController {
       return res
         .status(200)
         .json(ResponseHelper.success("Token renovado com sucesso", { accessToken }));
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      console.error("Erro ao renovar token:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));
     }
   }

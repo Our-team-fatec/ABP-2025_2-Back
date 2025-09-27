@@ -63,8 +63,6 @@ class UserController {
         .status(201)
         .json(ResponseHelper.success("Usuário cadastrado com sucesso", newUser));
     } catch (error) {
-      console.error("Erro ao cadastrar usuário:", error);
-
       // Tratar erros específicos do Prisma
       if (error instanceof Error && error.message.includes("Unique constraint failed")) {
         return res.status(409).json(ResponseHelper.error("Email já cadastrado", 409));

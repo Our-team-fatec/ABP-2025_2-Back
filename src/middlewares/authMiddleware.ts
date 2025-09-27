@@ -13,7 +13,6 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
 
   try {
     const decoded = jwtService.verifyToken(token);
-    console.log(decoded);
     req.body = {
       ...req.body,
       userId: decoded.userId,
@@ -21,8 +20,8 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
       userGrupo: decoded.grupo,
     };
     next();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
-    console.error("Erro ao verificar token:", error);
     return res.status(403).json(ResponseHelper.error("Token de autorização inválido", 403));
   }
 };

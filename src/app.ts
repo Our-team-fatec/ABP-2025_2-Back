@@ -1,15 +1,28 @@
 import express from "express";
 import dotenv from "dotenv";
-import healthRouter from "./routes/health";
+import cors from "cors";
+import routes from "./routes/index";
 import { connectDB, disconnectDB } from "./config/db";
+import { notFoundMiddleware } from "./middlewares/notFoundMiddleware";
+import { errorMiddleware } from "./middlewares/errorMiddleware";
 
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 const app = express();
 
+
+// Middlewares globais
 app.use(express.json());
-app.use(healthRouter);
+app.use(cors());
+
+
+// Rotas
+app.use("/api", routes);
+
+// Middlewares personalizados
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
 
 (async () => {
   await connectDB();

@@ -1,7 +1,7 @@
 import request from "supertest";
 import { PrismaClient } from "../src/generated/prisma";
 import express from "express";
-import healthRouter from "../src/routes/health";
+import healthRouter from "../src/routes/healthRoutes";
 
 const prisma = new PrismaClient();
 
@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 const createTestApp = () => {
   const app = express();
   app.use(express.json());
-  app.use(healthRouter);
+  app.use("/health", healthRouter);
   return app;
 };
 
@@ -29,8 +29,7 @@ describe("Testes de Integração", () => {
 
   afterAll(async () => {
     try {
-      // Limpa o banco e fecha conexão
-      await prisma.$executeRawUnsafe(`DROP SCHEMA public CASCADE; CREATE SCHEMA public;`);
+      // Fecha conexão sem tentar dropar schema
       await prisma.$disconnect();
     } catch (error) {
       console.error("Erro ao desconectar do Postgres de teste:", error);
@@ -38,15 +37,8 @@ describe("Testes de Integração", () => {
   });
 
   beforeEach(async () => {
-    // Limpa todas as tabelas antes de cada teste
-    const tablenames = await prisma.$queryRaw<Array<{ tablename: string }>>`
-      SELECT tablename FROM pg_tables WHERE schemaname='public';
-    `;
-    for (const { tablename } of tablenames) {
-      if (tablename !== "_prisma_migrations") {
-        await prisma.$executeRawUnsafe(`TRUNCATE TABLE "${tablename}" RESTART IDENTITY CASCADE;`);
-      }
-    }
+    // Limpa dados de teste se necessário
+    // Para agora deixamos vazio para evitar conflitos na pipeline
   });
 
   describe("Verificação de Saúde", () => {

@@ -13,6 +13,18 @@ jest.mock("../src/config/db", () => ({
   getPrismaClient: () => mockPrisma,
 }));
 
+// Mock do bcrypt para testes de senha
+jest.mock("bcrypt", () => ({
+  hash: jest.fn().mockResolvedValue("hashed-password"),
+  compare: jest.fn(),
+}));
+
+// Mock do JWT Service
+jest.mock("../src/utils/jwtService", () => ({
+  generateToken: jest.fn().mockReturnValue("mock-jwt-token"),
+  verifyToken: jest.fn(),
+}));
+
 import usersRouter from "../src/routes/usersRoutes";
 
 const app = express();

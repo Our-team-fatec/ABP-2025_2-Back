@@ -19,44 +19,41 @@ class AuthController {
         return res.status(400).json(ResponseHelper.error("Formato de email inválido", 400));
       }
 
-      const user = await prisma.user.findUnique({
+      const usuario = await prisma.usuarios.findUnique({
         where: { email },
         select: {
           id: true,
-          name: true,
+          nome: true,
           email: true,
           endereco: true,
-          grupo: true,
           senha: true,
-          criadoEm: true,
+          criado_em: true,
         },
       });
-      if (!user) {
+      if (!usuario) {
         return res.status(401).json(ResponseHelper.error("Credenciais inválidas", 401));
       }
-      const senhaValida = await criptografia.verificarSenha(senha, user.senha);
+      const senhaValida = await criptografia.verificarSenha(senha, usuario.senha);
       if (!senhaValida) {
         return res.status(401).json(ResponseHelper.error("Credenciais inválidas", 401));
       }
 
       // Gerar tokens JWT
       const accessToken = jwtService.generateToken({
-        userId: user.id,
-        email: user.email,
-        grupo: user.grupo,
+        userId: usuario.id,
+        email: usuario.email
       });
       const refreshToken = jwtService.generateToken({
-        userId: user.id,
-        email: user.email,
-        grupo: user.grupo,
+        userId: usuario.id,
+        email: usuario.email
       });
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { senha: _, ...userWithoutPassword } = user;
+      const { senha: _, ...usuarioWithoutPassword } = usuario;
 
       return res.status(200).json(
         ResponseHelper.success("Login realizado com sucesso", {
-          user: userWithoutPassword,
+          usuario: usuarioWithoutPassword,
           accessToken,
           refreshToken,
         }),
@@ -86,7 +83,6 @@ class AuthController {
       const accessToken = jwtService.generateToken({
         userId: payload.userId,
         email: payload.email,
-        grupo: payload.grupo,
       });
       return res
         .status(200)

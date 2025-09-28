@@ -41,7 +41,6 @@ describe("AuthMiddleware", () => {
       const mockDecodedUser = {
         userId: "user-123",
         email: "test@example.com",
-        grupo: 0,
       };
 
       (mockRequest.header as jest.Mock).mockReturnValue(`Bearer ${mockToken}`);
@@ -56,7 +55,6 @@ describe("AuthMiddleware", () => {
       expect(mockRequest.body).toEqual({
         userId: mockDecodedUser.userId,
         userEmail: mockDecodedUser.email,
-        userGrupo: mockDecodedUser.grupo,
       });
       expect(mockNext).toHaveBeenCalled();
       expect(mockResponse.status).not.toHaveBeenCalled();
@@ -125,7 +123,6 @@ describe("AuthMiddleware", () => {
       const mockDecodedUser = {
         userId: "user-123",
         email: "test@example.com",
-        grupo: 0,
       };
 
       (mockRequest.header as jest.Mock).mockReturnValue(`Bearer ${token}`);
@@ -148,7 +145,6 @@ describe("AuthMiddleware", () => {
       const mockDecodedUser = {
         userId: "user-123",
         email: "test@example.com",
-        grupo: 0,
       };
 
       (mockRequest.header as jest.Mock).mockReturnValue(`Bearer ${mockToken}`);
@@ -162,7 +158,6 @@ describe("AuthMiddleware", () => {
         existingField: "existingValue",
         userId: mockDecodedUser.userId,
         userEmail: mockDecodedUser.email,
-        userGrupo: mockDecodedUser.grupo,
       });
       expect(mockNext).toHaveBeenCalled();
     });

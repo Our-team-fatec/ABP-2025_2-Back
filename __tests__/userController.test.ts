@@ -3,7 +3,7 @@ import express from "express";
 
 // Mock do Prisma deve vir antes dos imports que usam o Prisma
 const mockPrisma = {
-  user: {
+  usuarios: {
     findUnique: jest.fn(),
     create: jest.fn(),
   },
@@ -39,7 +39,7 @@ describe("POST /api/users/register", () => {
   it("deve cadastrar um usuário com sucesso", async () => {
     // Arrange
     const userData = {
-      name: "João Silva",
+      nome: "João Silva",
       email: "joao@example.com",
       endereco: "Rua das Flores, 123",
       senha: "123456",
@@ -47,15 +47,14 @@ describe("POST /api/users/register", () => {
 
     const expectedUser = {
       id: "user-uuid",
-      name: userData.name,
+      nome: userData.nome,
       email: userData.email,
       endereco: userData.endereco,
-      grupo: 0,
-      criadoEm: new Date(),
+      criado_em: new Date(),
     };
 
-    mockPrisma.user.findUnique.mockResolvedValue(null);
-    mockPrisma.user.create.mockResolvedValue(expectedUser);
+    mockPrisma.usuarios.findUnique.mockResolvedValue(null);
+    mockPrisma.usuarios.create.mockResolvedValue(expectedUser);
 
     // Act
     const response = await request(app).post("/api/users/register").send(userData);
@@ -67,31 +66,28 @@ describe("POST /api/users/register", () => {
     expect(response.body.data).toEqual(
       expect.objectContaining({
         id: expectedUser.id,
-        name: expectedUser.name,
+        nome: expectedUser.nome,
         email: expectedUser.email,
         endereco: expectedUser.endereco,
-        grupo: expectedUser.grupo,
-        criadoEm: expect.any(String),
+        criado_em: expect.any(String),
       }),
     );
-    expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+    expect(mockPrisma.usuarios.findUnique).toHaveBeenCalledWith({
       where: { email: userData.email },
     });
-    expect(mockPrisma.user.create).toHaveBeenCalledWith({
+    expect(mockPrisma.usuarios.create).toHaveBeenCalledWith({
       data: {
-        name: userData.name,
+        nome: userData.nome,
         email: userData.email,
         endereco: userData.endereco,
         senha: expect.any(String), // senha deve estar hasheada
-        grupo: 0,
       },
       select: {
         id: true,
-        name: true,
+        nome: true,
         email: true,
         endereco: true,
-        grupo: true,
-        criadoEm: true,
+        criado_em: true,
       },
     });
   });
@@ -99,7 +95,7 @@ describe("POST /api/users/register", () => {
   it("deve retornar erro para campos obrigatórios faltando", async () => {
     // Arrange
     const incompleteData = {
-      name: "João Silva",
+      nome: "João Silva",
       // faltando email, endereco e senha
     };
 
@@ -116,7 +112,7 @@ describe("POST /api/users/register", () => {
   it("deve retornar erro para email inválido", async () => {
     // Arrange
     const invalidEmailData = {
-      name: "João Silva",
+      nome: "João Silva",
       email: "email-invalido",
       endereco: "Rua das Flores, 123",
       senha: "123456",
@@ -135,7 +131,7 @@ describe("POST /api/users/register", () => {
   it("deve retornar erro para senha muito curta", async () => {
     // Arrange
     const shortPasswordData = {
-      name: "João Silva",
+      nome: "João Silva",
       email: "joao@example.com",
       endereco: "Rua das Flores, 123",
       senha: "123",
@@ -154,13 +150,13 @@ describe("POST /api/users/register", () => {
   it("deve retornar erro para email já cadastrado", async () => {
     // Arrange
     const userData = {
-      name: "João Silva",
+      nome: "João Silva",
       email: "joao@example.com",
       endereco: "Rua das Flores, 123",
       senha: "123456",
     };
 
-    mockPrisma.user.findUnique.mockResolvedValue({ id: "existing-user" });
+    mockPrisma.usuarios.findUnique.mockResolvedValue({ id: "existing-user" });
 
     // Act
     const response = await request(app).post("/api/users/register").send(userData);
@@ -175,14 +171,14 @@ describe("POST /api/users/register", () => {
   it("deve retornar erro 500 para erro interno", async () => {
     // Arrange
     const userData = {
-      name: "João Silva",
+      nome: "João Silva",
       email: "joao@example.com",
       endereco: "Rua das Flores, 123",
       senha: "123456",
     };
 
-    mockPrisma.user.findUnique.mockResolvedValue(null);
-    mockPrisma.user.create.mockRejectedValue(new Error("Database error"));
+    mockPrisma.usuarios.findUnique.mockResolvedValue(null);
+    mockPrisma.usuarios.create.mockRejectedValue(new Error("Database error"));
 
     // Act
     const response = await request(app).post("/api/users/register").send(userData);

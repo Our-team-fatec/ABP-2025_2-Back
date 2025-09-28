@@ -30,7 +30,6 @@ describe("JwtService", () => {
       const payload: JwtPayload = {
         userId: "user-123",
         email: "test@example.com",
-        grupo: 0,
       };
       const expectedToken = "generated-token";
 
@@ -53,7 +52,6 @@ describe("JwtService", () => {
       const payload: JwtPayload = {
         userId: "user-123",
         email: "test@example.com",
-        grupo: 0,
       };
 
       (jwt.sign as jest.Mock).mockReturnValue("token");
@@ -77,7 +75,6 @@ describe("JwtService", () => {
       const expectedPayload: JwtPayload = {
         userId: "user-123",
         email: "test@example.com",
-        grupo: 0,
       };
 
       (jwt.verify as jest.Mock).mockReturnValue(expectedPayload);

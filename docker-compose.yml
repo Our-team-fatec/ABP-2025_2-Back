@@ -1,41 +1,44 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  # Aplicação Node.js
   app:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
+    container_name: davinci_app
+    restart: unless-stopped
     ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=development
-      - PORT=3000
-      - MONGODB_URI=mongodb://mongodb:27017/davinci_pets
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env
     volumes:
-      - ./src:/app/src
+      - ./src:/app/src:cached
       - ./package.json:/app/package.json
       - ./tsconfig.json:/app/tsconfig.json
+      - /app/node_modules
     depends_on:
-      - mongodb
+      - postgres
+    command: sh -c "npx prisma migrate deploy && npm run dev"
     networks:
       - app-network
-    restart: unless-stopped
 
-  # MongoDB
-  mongodb:
-    image: mongo:7.0
-    container_name: davinci_pets_mongodb
+  postgres:
+    image: postgres:15
+    container_name: davinci_postgres
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - mongodb_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
 
 volumes:
-  mongodb_data:
+  postgres_data:
 
 networks:
   app-network:

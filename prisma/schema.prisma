@@ -1,0 +1,145 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}   
+
+// Enums necessários
+enum Especie {
+  CACHORRO
+  GATO
+}
+
+enum TipoResidencia {
+  CASA
+  APARTAMENTO
+  SITIO
+  CHACARA
+}
+
+// Modelo de usuários
+model usuarios {
+  id            String    @id @default(uuid())
+  nome          String
+  email         String    @unique  
+  senha         String
+  endereco      String
+  criado_em     DateTime  @default(now())
+  atualizado_em DateTime  @updatedAt
+  removido_em   DateTime? 
+  
+  // Relacionamentos
+  pets                      pets[]        @relation("TutorPets")
+  adocoes_como_doador       adocoes[]     @relation("DoadorAdocoes")
+  adocoes_como_tutor        adocoes[]     @relation("TutorAdocoes")
+  formularios_como_doador   formularios[] @relation("DoadorFormularios")
+  formularios_como_tutor    formularios[] @relation("TutorFormularios")
+  
+  @@index([email])
+  @@index([removido_em])
+}
+
+
+// Modelo de pets
+model pets {
+  id            String    @id @default(uuid())
+  tutor_id      String
+  tutor         usuarios  @relation("TutorPets", fields: [tutor_id], references: [id])
+  nome          String 
+  especie       Especie
+  raca          String
+  criado_em     DateTime  @default(now())
+  atualizado_em DateTime  @updatedAt
+  removido_em   DateTime?
+  
+  // Relacionamentos
+  adocao      adocoes?
+  formularios formularios[]
+  imagens     imagens[]
+  
+  @@index([tutor_id])
+  @@index([especie])
+  @@index([removido_em])
+}
+
+// Modelo de adoções
+model adocoes {
+  id            String    @id @default(uuid())
+  doador_id     String    // Quem anunciou o pet
+  doador        usuarios  @relation("DoadorAdocoes", fields: [doador_id], references: [id])
+  tutor_id      String?   // Quem adotou o pet (pode ser null se ainda não foi adotado)
+  tutor         usuarios? @relation("TutorAdocoes", fields: [tutor_id], references: [id])
+  pet_id        String    @unique // Um pet tem apenas uma publicação de adoção
+  pet           pets      @relation(fields: [pet_id], references: [id])
+  descricao     String
+  endereco      String
+  criado_em     DateTime  @default(now())
+  atualizado_em DateTime  @updatedAt
+  removido_em   DateTime?
+  
+  // Relacionamentos
+  formularios formularios[]
+  
+  @@index([doador_id])
+  @@index([tutor_id])
+  @@index([pet_id])
+  @@index([removido_em])
+}
+
+// Modelo de formulários/questionários
+model formularios {
+  id                     String         @id @default(uuid())
+  doador_id              String         // Quem anunciou o pet
+  doador                 usuarios       @relation("DoadorFormularios", fields: [doador_id], references: [id])
+  tutor_id               String         // Quem tem interesse em adotar
+  tutor                  usuarios       @relation("TutorFormularios", fields: [tutor_id], references: [id])
+  pet_id                 String         // Pet de interesse
+  pet                    pets           @relation(fields: [pet_id], references: [id])
+  adocao_id              String         // Publicação de adoção relacionada
+  adocao                 adocoes        @relation(fields: [adocao_id], references: [id])
+  
+  // Dados do formulário
+  tutor_nome             String
+  tutor_email            String
+  tutor_endereco         String
+  tutor_residencia       TipoResidencia
+  detalhes_residencia    String
+  pessoas_residencia     Int
+  outros_pets            Boolean        @default(false)
+  horas_pet_sozinho      Int
+  cuidador_pet           String?
+  termos_servico         Boolean        @default(false)
+  
+  criado_em              DateTime       @default(now())
+  atualizado_em          DateTime       @updatedAt
+  removido_em            DateTime?
+  
+  @@index([doador_id])
+  @@index([tutor_id])
+  @@index([pet_id])
+  @@index([adocao_id])
+  @@index([removido_em])
+}
+
+// Modelo de imagens
+model imagens {
+  id            String    @id @default(uuid())
+  url           String
+  titulo        String?
+  descricao     String?
+  pet_id        String?   // Relacionamento opcional com pet
+  pet           pets?     @relation(fields: [pet_id], references: [id])
+  criado_em     DateTime  @default(now())
+  atualizado_em DateTime  @updatedAt
+  removido_em   DateTime?
+  
+  @@index([pet_id])
+  @@index([removido_em])
+}

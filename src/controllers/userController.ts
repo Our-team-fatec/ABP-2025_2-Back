@@ -9,10 +9,10 @@ const prisma = getPrismaClient();
 class UserController {
   public async registerUser(req: Request, res: Response): Promise<Response> {
     try {
-      const { name, email, endereco, senha, grupo = 0 } = req.body;
+      const { nome, email, endereco, senha } = req.body;
 
       // Validação básica dos campos obrigatórios
-      if (!name || !email || !endereco || !senha) {
+      if (!nome || !email || !endereco || !senha) {
         return res.status(400).json(ResponseHelper.error("Todos os campos são obrigatórios", 400));
       }
 
@@ -29,7 +29,7 @@ class UserController {
       }
 
       // Verificar se o email já existe
-      const existingUser = await prisma.user.findUnique({
+      const existingUser = await prisma.usuarios.findUnique({
         where: { email },
       });
 
@@ -41,21 +41,19 @@ class UserController {
       const hashedPassword = await criptografia.criptografarSenha(senha);
 
       // Criar o usuário
-      const newUser = await prisma.user.create({
+      const newUser = await prisma.usuarios.create({
         data: {
-          name,
+          nome,
           email,
           endereco,
           senha: hashedPassword,
-          grupo: Number(grupo) || 0,
         },
         select: {
           id: true,
-          name: true,
+          nome: true,
           email: true,
           endereco: true,
-          grupo: true,
-          criadoEm: true,
+          criado_em: true,
         },
       });
 

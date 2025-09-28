@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 export interface JwtPayload {
   userId: string;
   email: string;
-  grupo: number;
 }
 
 class JwtService {

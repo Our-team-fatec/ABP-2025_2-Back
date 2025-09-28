@@ -3,7 +3,7 @@ import express from "express";
 
 // Mock do Prisma deve vir antes dos imports que usam o Prisma
 const mockPrisma = {
-  user: {
+  usuarios: {
     findUnique: jest.fn(),
   },
 };
@@ -47,15 +47,14 @@ describe("AuthController", () => {
 
       const mockUser = {
         id: "user-uuid",
-        name: "João Silva",
+        nome: "João Silva",
         email: "joao@example.com",
         endereco: "Rua das Flores, 123",
-        grupo: 0,
         senha: "hashed-password",
-        criadoEm: new Date(),
+        criado_em: new Date(),
       };
 
-      mockPrisma.user.findUnique.mockResolvedValue(mockUser);
+      mockPrisma.usuarios.findUnique.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       (jwtService.generateToken as jest.Mock).mockReturnValue("mock-jwt-token");
 
@@ -67,18 +66,17 @@ describe("AuthController", () => {
       expect(response.body.status).toBe("success");
       expect(response.body.message).toBe("Login realizado com sucesso");
       expect(response.body.data).toEqual({
-        user: {
+        usuario: {
           id: mockUser.id,
-          name: mockUser.name,
+          nome: mockUser.nome,
           email: mockUser.email,
           endereco: mockUser.endereco,
-          grupo: mockUser.grupo,
-          criadoEm: expect.any(String),
+          criado_em: expect.any(String),
         },
         accessToken: "mock-jwt-token",
         refreshToken: "mock-jwt-token",
       });
-      expect(response.body.data.user).not.toHaveProperty("senha");
+      expect(response.body.data.usuario).not.toHaveProperty("senha");
     });
 
     it("deve retornar erro para campos obrigatórios faltando", async () => {
@@ -122,7 +120,7 @@ describe("AuthController", () => {
         senha: "123456",
       };
 
-      mockPrisma.user.findUnique.mockResolvedValue(null);
+      mockPrisma.usuarios.findUnique.mockResolvedValue(null);
 
       // Act
       const response = await request(app).post("/api/auth/login").send(loginData);
@@ -146,12 +144,11 @@ describe("AuthController", () => {
         name: "João Silva",
         email: "joao@example.com",
         endereco: "Rua das Flores, 123",
-        grupo: 0,
         senha: "hashed-password",
         criadoEm: new Date(),
       };
 
-      mockPrisma.user.findUnique.mockResolvedValue(mockUser);
+      mockPrisma.usuarios.findUnique.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       // Act
@@ -175,7 +172,6 @@ describe("AuthController", () => {
       const mockPayload = {
         userId: "user-123",
         email: "test@example.com",
-        grupo: 0,
       };
 
       (jwtService.verifyToken as jest.Mock).mockReturnValue(mockPayload);

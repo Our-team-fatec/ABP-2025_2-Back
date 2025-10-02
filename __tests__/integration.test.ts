@@ -74,7 +74,8 @@ describe("Testes de Integração", () => {
       const result = await prisma.$queryRaw<{ current_database: string }[]>`
         SELECT current_database() as current_database;
       `;
-      expect(result[0].current_database).toBe("davinci_pets");
+      // Aceita tanto o banco local quanto o Neon
+      expect(["davinci_pets", "neondb"]).toContain(result[0].current_database);
     });
   });
 });

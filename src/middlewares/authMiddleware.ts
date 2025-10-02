@@ -16,7 +16,7 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
     req.body = {
       ...req.body,
       userId: decoded.userId,
-      userEmail: decoded.email
+      userEmail: decoded.email,
     };
     next();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

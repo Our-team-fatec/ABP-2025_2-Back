@@ -41,11 +41,11 @@ class AuthController {
       // Gerar tokens JWT
       const accessToken = jwtService.generateToken({
         userId: usuario.id,
-        email: usuario.email
+        email: usuario.email,
       });
       const refreshToken = jwtService.generateToken({
         userId: usuario.id,
-        email: usuario.email
+        email: usuario.email,
       });
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars

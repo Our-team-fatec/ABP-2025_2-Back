@@ -17,7 +17,9 @@ class PetsController {
 
       // Validações
       if (!nome || !especie || !raca) {
-        return res.status(400).json(ResponseHelper.error("Nome, espécie e raça são obrigatórios", 400));
+        return res
+          .status(400)
+          .json(ResponseHelper.error("Nome, espécie e raça são obrigatórios", 400));
       }
 
       if (!Object.values(Especie).includes(especie)) {
@@ -28,8 +30,8 @@ class PetsController {
       const user = await prisma.usuarios.findFirst({
         where: {
           id: userId,
-          removido_em: null
-        }
+          removido_em: null,
+        },
       });
 
       if (!user) {
@@ -41,22 +43,21 @@ class PetsController {
           nome,
           especie,
           raca,
-          tutor_id: userId
+          tutor_id: userId,
         },
         include: {
           tutor: {
             select: {
               id: true,
               nome: true,
-              email: true
-            }
+              email: true,
+            },
           },
-          imagens: true
-        }
+          imagens: true,
+        },
       });
 
       return res.status(201).json(ResponseHelper.success("Pet criado com sucesso", pet));
-
     } catch (error) {
       console.error("Erro ao criar pet:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));
@@ -78,35 +79,35 @@ class PetsController {
       const pets = await prisma.pets.findMany({
         where: {
           tutor_id: userId,
-          removido_em: null
+          removido_em: null,
         },
         include: {
           tutor: {
             select: {
               id: true,
               nome: true,
-              email: true
-            }
+              email: true,
+            },
           },
           imagens: {
-            where: { removido_em: null }
+            where: { removido_em: null },
           },
           adocao: {
-            where: { removido_em: null }
-          }
+            where: { removido_em: null },
+          },
         },
         skip,
         take: Number(limit),
         orderBy: {
-          criado_em: "desc"
-        }
+          criado_em: "desc",
+        },
       });
 
       const total = await prisma.pets.count({
         where: {
           tutor_id: userId,
-          removido_em: null
-        }
+          removido_em: null,
+        },
       });
 
       const response = {
@@ -115,12 +116,11 @@ class PetsController {
           page: Number(page),
           limit: Number(limit),
           total,
-          pages: Math.ceil(total / Number(limit))
-        }
+          pages: Math.ceil(total / Number(limit)),
+        },
       };
 
       return res.json(ResponseHelper.success("Pets encontrados", response));
-
     } catch (error) {
       console.error("Erro ao buscar pets:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));
@@ -141,23 +141,23 @@ class PetsController {
         where: {
           id,
           tutor_id: userId,
-          removido_em: null
+          removido_em: null,
         },
         include: {
           tutor: {
             select: {
               id: true,
               nome: true,
-              email: true
-            }
+              email: true,
+            },
           },
           imagens: {
-            where: { removido_em: null }
+            where: { removido_em: null },
           },
           adocao: {
-            where: { removido_em: null }
-          }
-        }
+            where: { removido_em: null },
+          },
+        },
       });
 
       if (!pet) {
@@ -165,7 +165,6 @@ class PetsController {
       }
 
       return res.json(ResponseHelper.success("Pet encontrado", pet));
-
     } catch (error) {
       console.error("Erro ao buscar pet:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));
@@ -187,8 +186,8 @@ class PetsController {
         where: {
           id,
           tutor_id: userId,
-          removido_em: null
-        }
+          removido_em: null,
+        },
       });
 
       if (!existingPet) {
@@ -205,24 +204,23 @@ class PetsController {
         data: {
           ...(nome && { nome }),
           ...(especie && { especie }),
-          ...(raca && { raca })
+          ...(raca && { raca }),
         },
         include: {
           tutor: {
             select: {
               id: true,
               nome: true,
-              email: true
-            }
+              email: true,
+            },
           },
           imagens: {
-            where: { removido_em: null }
-          }
-        }
+            where: { removido_em: null },
+          },
+        },
       });
 
       return res.json(ResponseHelper.success("Pet atualizado com sucesso", updatedPet));
-
     } catch (error) {
       console.error("Erro ao atualizar pet:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));
@@ -244,8 +242,8 @@ class PetsController {
         where: {
           id,
           tutor_id: userId,
-          removido_em: null
-        }
+          removido_em: null,
+        },
       });
 
       if (!existingPet) {
@@ -256,12 +254,11 @@ class PetsController {
       await prisma.pets.update({
         where: { id },
         data: {
-          removido_em: new Date()
-        }
+          removido_em: new Date(),
+        },
       });
 
       return res.json(ResponseHelper.success("Pet removido com sucesso", null));
-
     } catch (error) {
       console.error("Erro ao deletar pet:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));
@@ -274,12 +271,13 @@ class PetsController {
       const { page = 1, limit = 10, especie, raca } = req.query;
       const skip = (Number(page) - 1) * Number(limit);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const where: any = {
         removido_em: null,
         adocao: {
           removido_em: null,
-          tutor_id: null // Apenas pets disponíveis para adoção
-        }
+          tutor_id: null, // Apenas pets disponíveis para adoção
+        },
       };
 
       if (especie) {
@@ -289,7 +287,7 @@ class PetsController {
       if (raca) {
         where.raca = {
           contains: raca as string,
-          mode: "insensitive"
+          mode: "insensitive",
         };
       }
 
@@ -300,26 +298,26 @@ class PetsController {
             select: {
               id: true,
               nome: true,
-              endereco: true
-            }
+              endereco: true,
+            },
           },
           imagens: {
-            where: { removido_em: null }
+            where: { removido_em: null },
           },
           adocao: {
             select: {
               id: true,
               descricao: true,
               endereco: true,
-              criado_em: true
-            }
-          }
+              criado_em: true,
+            },
+          },
         },
         skip,
         take: Number(limit),
         orderBy: {
-          criado_em: "desc"
-        }
+          criado_em: "desc",
+        },
       });
 
       const total = await prisma.pets.count({ where });
@@ -330,12 +328,11 @@ class PetsController {
           page: Number(page),
           limit: Number(limit),
           total,
-          pages: Math.ceil(total / Number(limit))
-        }
+          pages: Math.ceil(total / Number(limit)),
+        },
       };
 
       return res.json(ResponseHelper.success("Pets encontrados", response));
-
     } catch (error) {
       console.error("Erro ao buscar pets:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));

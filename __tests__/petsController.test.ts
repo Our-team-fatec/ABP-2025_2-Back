@@ -23,12 +23,13 @@ jest.mock("../src/config/db", () => ({
 import petsController from "../src/controllers/petsController";
 
 // Mocks para Request e Response
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockRequest = (body: any = {}, params: any = {}, query: any = {}) =>
   ({
     body,
     params,
     query,
-  } as Request);
+  }) as Request;
 
 const mockResponse = () => {
   const res = {} as Response;
@@ -290,7 +291,7 @@ describe("PetsController", () => {
           especie: Especie.CACHORRO,
           raca: "Golden Retriever",
         },
-        { id: "pet-123" }
+        { id: "pet-123" },
       );
       const res = mockResponse();
 

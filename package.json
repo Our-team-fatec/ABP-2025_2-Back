@@ -48,7 +48,7 @@
     "multer": "^2.0.2",
     "prisma": "^6.16.2",
     "sharp": "^0.34.4",
-    "uuid": "^13.0.0"
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",

@@ -63,7 +63,7 @@ class PetsController {
         try {
           const uploadPromises = req.files.map(async (file) => {
             const uploadResult = await uploadToS3(file, "pets");
-            
+
             return prisma.imagens.create({
               data: {
                 url: uploadResult.url,
@@ -87,18 +87,23 @@ class PetsController {
                 },
               },
               imagens: {
-                where: { removido_em: null }
+                where: { removido_em: null },
               },
             },
           });
 
-          return res.status(201).json(ResponseHelper.success("Pet criado com sucesso", petWithImages));
+          return res
+            .status(201)
+            .json(ResponseHelper.success("Pet criado com sucesso", petWithImages));
         } catch (uploadError) {
           console.error("Erro no upload das imagens:", uploadError);
           // Pet foi criado, mas falhou o upload - retorna o pet sem imagens
           return res.status(201).json({
-            ...ResponseHelper.success("Pet criado com sucesso, mas falhou o upload das imagens", pet),
-            warning: "Upload das imagens falhou"
+            ...ResponseHelper.success(
+              "Pet criado com sucesso, mas falhou o upload das imagens",
+              pet,
+            ),
+            warning: "Upload das imagens falhou",
           });
         }
       }
@@ -271,7 +276,7 @@ class PetsController {
         try {
           const uploadPromises = req.files.map(async (file) => {
             const uploadResult = await uploadToS3(file, "pets");
-            
+
             return prisma.imagens.create({
               data: {
                 url: uploadResult.url,
@@ -295,7 +300,7 @@ class PetsController {
                 },
               },
               imagens: {
-                where: { removido_em: null }
+                where: { removido_em: null },
               },
             },
           });
@@ -305,8 +310,11 @@ class PetsController {
           console.error("Erro no upload das imagens:", uploadError);
           // Pet foi atualizado, mas falhou o upload - retorna o pet sem as novas imagens
           return res.json({
-            ...ResponseHelper.success("Pet atualizado com sucesso, mas falhou o upload das imagens", updatedPet),
-            warning: "Upload das imagens falhou"
+            ...ResponseHelper.success(
+              "Pet atualizado com sucesso, mas falhou o upload das imagens",
+              updatedPet,
+            ),
+            warning: "Upload das imagens falhou",
           });
         }
       }

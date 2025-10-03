@@ -5,3 +5,4 @@ coverage
 .vscode
 /src/generated/prisma
 migrations
+docs

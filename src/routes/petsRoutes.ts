@@ -12,6 +12,7 @@ router.get("/public", petsController.getAllPets); // Listar todos os pets para a
 router.post("/", authMiddleware, preserveBody("images"), petsController.createPet); // Criar pet com múltiplas imagens
 router.get("/", authMiddleware, petsController.getUserPets); // Listar pets do usuário
 router.get("/:id", authMiddleware, petsController.getPetById); // Buscar pet por ID
+router.get("/:id/images/status", authMiddleware, petsController.getPetImageStatus); // Verificar status das imagens
 router.put("/:id", authMiddleware, preserveBody("images"), petsController.updatePet); // Atualizar pet com múltiplas imagens
 router.delete("/:id", authMiddleware, petsController.deletePet); // Deletar pet
 router.delete("/:petId/images/:imageId", authMiddleware, petsController.deleteImage); // Deletar imagem específica

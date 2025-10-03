@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { getPrismaClient } from "../config/db";
 import ResponseHelper from "../utils/responseHelper";
 import { Especie } from "../generated/prisma";
+import { uploadToS3 } from "../utils/s3Upload";
 
 const prisma = getPrismaClient();
 
@@ -56,6 +57,56 @@ class PetsController {
           imagens: true,
         },
       });
+
+      // Upload de imagens se fornecidas
+      if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+        try {
+          const uploadPromises = req.files.map(async (file) => {
+            const uploadResult = await uploadToS3(file, "pets");
+
+            return prisma.imagens.create({
+              data: {
+                url: uploadResult.url,
+                titulo: uploadResult.originalFilename,
+                pet_id: pet.id,
+              },
+            });
+          });
+
+          await Promise.all(uploadPromises);
+
+          // Recarregar o pet com as imagens
+          const petWithImages = await prisma.pets.findUnique({
+            where: { id: pet.id },
+            include: {
+              tutor: {
+                select: {
+                  id: true,
+                  nome: true,
+                  email: true,
+                },
+              },
+              imagens: {
+                where: { removido_em: null },
+              },
+            },
+          });
+
+          return res
+            .status(201)
+            .json(ResponseHelper.success("Pet criado com sucesso", petWithImages));
+        } catch (uploadError) {
+          console.error("Erro no upload das imagens:", uploadError);
+          // Pet foi criado, mas falhou o upload - retorna o pet sem imagens
+          return res.status(201).json({
+            ...ResponseHelper.success(
+              "Pet criado com sucesso, mas falhou o upload das imagens",
+              pet,
+            ),
+            warning: "Upload das imagens falhou",
+          });
+        }
+      }
 
       return res.status(201).json(ResponseHelper.success("Pet criado com sucesso", pet));
     } catch (error) {
@@ -220,6 +271,54 @@ class PetsController {
         },
       });
 
+      // Upload de novas imagens se fornecidas
+      if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+        try {
+          const uploadPromises = req.files.map(async (file) => {
+            const uploadResult = await uploadToS3(file, "pets");
+
+            return prisma.imagens.create({
+              data: {
+                url: uploadResult.url,
+                titulo: uploadResult.originalFilename,
+                pet_id: id,
+              },
+            });
+          });
+
+          await Promise.all(uploadPromises);
+
+          // Recarregar o pet com as imagens atualizadas
+          const petWithImages = await prisma.pets.findUnique({
+            where: { id },
+            include: {
+              tutor: {
+                select: {
+                  id: true,
+                  nome: true,
+                  email: true,
+                },
+              },
+              imagens: {
+                where: { removido_em: null },
+              },
+            },
+          });
+
+          return res.json(ResponseHelper.success("Pet atualizado com sucesso", petWithImages));
+        } catch (uploadError) {
+          console.error("Erro no upload das imagens:", uploadError);
+          // Pet foi atualizado, mas falhou o upload - retorna o pet sem as novas imagens
+          return res.json({
+            ...ResponseHelper.success(
+              "Pet atualizado com sucesso, mas falhou o upload das imagens",
+              updatedPet,
+            ),
+            warning: "Upload das imagens falhou",
+          });
+        }
+      }
+
       return res.json(ResponseHelper.success("Pet atualizado com sucesso", updatedPet));
     } catch (error) {
       console.error("Erro ao atualizar pet:", error);
@@ -335,6 +434,57 @@ class PetsController {
       return res.json(ResponseHelper.success("Pets encontrados", response));
     } catch (error) {
       console.error("Erro ao buscar pets:", error);
+      return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));
+    }
+  }
+
+  // Deletar imagem específica de um pet
+  public async deleteImage(req: Request, res: Response): Promise<Response> {
+    try {
+      const { petId, imageId } = req.params;
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(401).json(ResponseHelper.error("Usuário não autenticado", 401));
+      }
+
+      // Verificar se o pet existe e pertence ao usuário
+      const pet = await prisma.pets.findFirst({
+        where: {
+          id: petId,
+          tutor_id: userId,
+          removido_em: null,
+        },
+      });
+
+      if (!pet) {
+        return res.status(404).json(ResponseHelper.error("Pet não encontrado", 404));
+      }
+
+      // Verificar se a imagem existe e pertence ao pet
+      const image = await prisma.imagens.findFirst({
+        where: {
+          id: imageId,
+          pet_id: petId,
+          removido_em: null,
+        },
+      });
+
+      if (!image) {
+        return res.status(404).json(ResponseHelper.error("Imagem não encontrada", 404));
+      }
+
+      // Soft delete da imagem
+      await prisma.imagens.update({
+        where: { id: imageId },
+        data: {
+          removido_em: new Date(),
+        },
+      });
+
+      return res.json(ResponseHelper.success("Imagem removida com sucesso", null));
+    } catch (error) {
+      console.error("Erro ao deletar imagem:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));
     }
   }

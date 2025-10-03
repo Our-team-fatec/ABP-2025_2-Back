@@ -2,7 +2,7 @@ import multer from "multer";
 import { Request, Response, NextFunction } from "express";
 import sharp from "sharp";
 
-const IMAGE_SIZE_LIMIT = 5 * 1024 * 1024;
+const IMAGE_SIZE_LIMIT = 10 * 1024 * 1024;
 
 const imageFileFilter = (
   req: Request,

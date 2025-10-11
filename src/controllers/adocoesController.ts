@@ -31,9 +31,9 @@ class AdocoesController {
       });
 
       if (!pet) {
-        return res.status(404).json(
-          ResponseHelper.error("Pet não encontrado ou não pertence ao usuário", 404)
-        );
+        return res
+          .status(404)
+          .json(ResponseHelper.error("Pet não encontrado ou não pertence ao usuário", 404));
       }
 
       // Verificar se o pet já tem anúncio de adoção ativo
@@ -45,47 +45,103 @@ class AdocoesController {
       });
 
       if (existingAdocao) {
-        return res.status(400).json(
-          ResponseHelper.error("Este pet já possui um anúncio de adoção ativo", 400)
-        );
+        return res
+          .status(400)
+          .json(ResponseHelper.error("Este pet já possui um anúncio de adoção ativo", 400));
       }
 
-      const adocao = await prisma.adocoes.create({
-        data: {
-          doador_id: userId,
-          pet_id,
-          descricao,
-          endereco,
-        },
-        include: {
-          doador: {
-            select: {
-              id: true,
-              nome: true,
-              email: true,
-              endereco: true,
-            },
-          },
-          pet: {
-            include: {
-              imagens: {
-                where: {
-                  removido_em: null,
-                },
-              },
-            },
-          },
-          tutor: {
-            select: {
-              id: true,
-              nome: true,
-              email: true,
-            },
-          },
+      // Verificar se existe uma adoção removida para este pet
+      const removedAdocao = await prisma.adocoes.findFirst({
+        where: {
+          pet_id: pet_id,
+          removido_em: { not: null },
         },
       });
 
-      return res.status(201).json(ResponseHelper.success("Anúncio de adoção criado com sucesso", adocao));
+      let adocao;
+
+      if (removedAdocao) {
+        // Se existe uma adoção removida, reativar e atualizar com os novos dados
+        adocao = await prisma.adocoes.update({
+          where: { id: removedAdocao.id },
+          data: {
+            doador_id: userId,
+            descricao,
+            endereco,
+            removido_em: null,
+            tutor_id: null, // Reset do tutor caso tenha sido adotado antes
+            atualizado_em: new Date(),
+          },
+          include: {
+            doador: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+                endereco: true,
+              },
+            },
+            pet: {
+              include: {
+                imagens: {
+                  where: {
+                    removido_em: null,
+                  },
+                },
+              },
+            },
+            tutor: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+              },
+            },
+          },
+        });
+      } else {
+        // Se não existe adoção removida, criar uma nova
+        adocao = await prisma.adocoes.create({
+          data: {
+            doador_id: userId,
+            pet_id,
+            descricao,
+            endereco,
+          },
+          include: {
+            doador: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+                endereco: true,
+              },
+            },
+            pet: {
+              include: {
+                imagens: {
+                  where: {
+                    removido_em: null,
+                  },
+                },
+              },
+            },
+            tutor: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+              },
+            },
+          },
+        });
+      }
+
+      const message = removedAdocao
+        ? "Anúncio de adoção reativado e atualizado com sucesso"
+        : "Anúncio de adoção criado com sucesso";
+
+      return res.status(201).json(ResponseHelper.success(message, adocao));
     } catch (error) {
       console.error("Erro ao criar anúncio de adoção:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor"));
@@ -95,20 +151,14 @@ class AdocoesController {
   // Listar todas as adoções (com filtros opcionais)
   public async listAdocoes(req: Request, res: Response): Promise<Response> {
     try {
-      const { 
-        page = 1, 
-        limit = 10, 
-        especie, 
-        raca, 
-        cidade,
-        doador_id 
-      } = req.query;
+      const { page = 1, limit = 10, especie, raca, cidade, doador_id } = req.query; // eslint-disable-line @typescript-eslint/no-unused-vars
 
       const pageNumber = parseInt(page as string);
       const limitNumber = parseInt(limit as string);
       const skip = (pageNumber - 1) * limitNumber;
 
       // Construir filtros dinâmicos
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const whereConditions: any = {
         removido_em: null,
         tutor_id: null, // Apenas adoções ainda disponíveis
@@ -117,7 +167,7 @@ class AdocoesController {
       if (cidade) {
         whereConditions.endereco = {
           contains: cidade as string,
-          mode: 'insensitive',
+          mode: "insensitive",
         };
       }
 
@@ -155,7 +205,7 @@ class AdocoesController {
             },
           },
           orderBy: {
-            criado_em: 'desc',
+            criado_em: "desc",
           },
           skip,
           take: limitNumber,
@@ -176,7 +226,7 @@ class AdocoesController {
             totalItems: total,
             itemsPerPage: limitNumber,
           },
-        })
+        }),
       );
     } catch (error) {
       console.error("Erro ao listar adoções:", error);
@@ -267,16 +317,21 @@ class AdocoesController {
       });
 
       if (!adocao) {
-        return res.status(404).json(
-          ResponseHelper.error("Anúncio de adoção não encontrado ou não pertence ao usuário", 404)
-        );
+        return res
+          .status(404)
+          .json(
+            ResponseHelper.error(
+              "Anúncio de adoção não encontrado ou não pertence ao usuário",
+              404,
+            ),
+          );
       }
 
       // Verificar se o pet já foi adotado
       if (adocao.tutor_id) {
-        return res.status(400).json(
-          ResponseHelper.error("Não é possível editar anúncio de pet já adotado", 400)
-        );
+        return res
+          .status(400)
+          .json(ResponseHelper.error("Não é possível editar anúncio de pet já adotado", 400));
       }
 
       const updatedAdocao = await prisma.adocoes.update({
@@ -314,9 +369,9 @@ class AdocoesController {
         },
       });
 
-      return res.status(200).json(
-        ResponseHelper.success("Anúncio de adoção atualizado com sucesso", updatedAdocao)
-      );
+      return res
+        .status(200)
+        .json(ResponseHelper.success("Anúncio de adoção atualizado com sucesso", updatedAdocao));
     } catch (error) {
       console.error("Erro ao atualizar adoção:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor"));
@@ -347,16 +402,19 @@ class AdocoesController {
       });
 
       if (!adocao) {
-        return res.status(404).json(
-          ResponseHelper.error("Anúncio de adoção não encontrado ou não pertence ao usuário", 404)
-        );
+        return res
+          .status(404)
+          .json(
+            ResponseHelper.error(
+              "Anúncio de adoção não encontrado ou não pertence ao usuário",
+              404,
+            ),
+          );
       }
 
       // Verificar se o pet já foi adotado
       if (adocao.tutor_id) {
-        return res.status(400).json(
-          ResponseHelper.error("Este pet já foi adotado", 400)
-        );
+        return res.status(400).json(ResponseHelper.error("Este pet já foi adotado", 400));
       }
 
       // Verificar se o tutor existe
@@ -371,43 +429,56 @@ class AdocoesController {
         return res.status(404).json(ResponseHelper.error("Tutor não encontrado", 404));
       }
 
-      const updatedAdocao = await prisma.adocoes.update({
-        where: { id },
-        data: {
-          tutor_id,
-          atualizado_em: new Date(),
-        },
-        include: {
-          doador: {
-            select: {
-              id: true,
-              nome: true,
-              email: true,
-              endereco: true,
-            },
+      // Atualizar tanto a adoção quanto o tutor do pet em uma transação
+      const updatedAdocao = await prisma.$transaction(async (tx) => {
+        // Atualizar o tutor do pet
+        await tx.pets.update({
+          where: { id: adocao.pet_id },
+          data: {
+            tutor_id,
+            atualizado_em: new Date(),
           },
-          pet: {
-            include: {
-              imagens: {
-                where: {
-                  removido_em: null,
+        });
+
+        // Atualizar a adoção
+        return await tx.adocoes.update({
+          where: { id },
+          data: {
+            tutor_id,
+            atualizado_em: new Date(),
+          },
+          include: {
+            doador: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+                endereco: true,
+              },
+            },
+            pet: {
+              include: {
+                imagens: {
+                  where: {
+                    removido_em: null,
+                  },
                 },
               },
             },
-          },
-          tutor: {
-            select: {
-              id: true,
-              nome: true,
-              email: true,
+            tutor: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+              },
             },
           },
-        },
+        });
       });
 
-      return res.status(200).json(
-        ResponseHelper.success("Pet marcado como adotado com sucesso", updatedAdocao)
-      );
+      return res
+        .status(200)
+        .json(ResponseHelper.success("Pet marcado como adotado com sucesso", updatedAdocao));
     } catch (error) {
       console.error("Erro ao marcar pet como adotado:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor"));
@@ -434,9 +505,14 @@ class AdocoesController {
       });
 
       if (!adocao) {
-        return res.status(404).json(
-          ResponseHelper.error("Anúncio de adoção não encontrado ou não pertence ao usuário", 404)
-        );
+        return res
+          .status(404)
+          .json(
+            ResponseHelper.error(
+              "Anúncio de adoção não encontrado ou não pertence ao usuário",
+              404,
+            ),
+          );
       }
 
       await prisma.adocoes.update({
@@ -446,9 +522,7 @@ class AdocoesController {
         },
       });
 
-      return res.status(200).json(
-        ResponseHelper.success("Anúncio de adoção removido com sucesso")
-      );
+      return res.status(200).json(ResponseHelper.success("Anúncio de adoção removido com sucesso"));
     } catch (error) {
       console.error("Erro ao remover adoção:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor"));
@@ -469,15 +543,16 @@ class AdocoesController {
       const limitNumber = parseInt(limit as string);
       const skip = (pageNumber - 1) * limitNumber;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const whereConditions: any = {
         doador_id: userId,
         removido_em: null,
       };
 
       // Filtrar por status
-      if (status === 'disponivel') {
+      if (status === "disponivel") {
         whereConditions.tutor_id = null;
-      } else if (status === 'adotado') {
+      } else if (status === "adotado") {
         whereConditions.tutor_id = { not: null };
       }
 
@@ -514,7 +589,7 @@ class AdocoesController {
             },
           },
           orderBy: {
-            criado_em: 'desc',
+            criado_em: "desc",
           },
           skip,
           take: limitNumber,
@@ -535,7 +610,7 @@ class AdocoesController {
             totalItems: total,
             itemsPerPage: limitNumber,
           },
-        })
+        }),
       );
     } catch (error) {
       console.error("Erro ao buscar adoções do usuário:", error);

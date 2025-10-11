@@ -28,16 +28,16 @@ const imageUpload = multer({
 const optimizeImage = async (fileBuffer: Buffer) => {
   // 🚀 OTIMIZAÇÃO: Configuração mais leve do Sharp
   return await sharp(fileBuffer)
-    .resize({ 
-      width: 600, 
-      height: 600, 
-      fit: 'inside', 
-      withoutEnlargement: true 
+    .resize({
+      width: 600,
+      height: 600,
+      fit: "inside",
+      withoutEnlargement: true,
     })
-    .jpeg({ 
-      quality: 70,  // Reduzido para 70%
-      progressive: false,  // Desabilitado para ser mais rápido
-      mozjpeg: true  // Usa mozjpeg para melhor compressão
+    .jpeg({
+      quality: 70, // Reduzido para 70%
+      progressive: false, // Desabilitado para ser mais rápido
+      mozjpeg: true, // Usa mozjpeg para melhor compressão
     })
     .toBuffer();
 };
@@ -73,7 +73,7 @@ const preserveBody = (type: "image" | "images") => {
             file.buffer = await optimizeImage(file.buffer);
             return file;
           });
-          
+
           await Promise.all(optimizationPromises);
         }
 

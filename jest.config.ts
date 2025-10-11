@@ -10,7 +10,11 @@ const config: Config = {
   moduleFileExtensions: ["ts", "js", "json"],
   clearMocks: true,
   setupFilesAfterEnv: [],
+  globalSetup: "<rootDir>/__tests__/setup.ts",
+  globalTeardown: "<rootDir>/__tests__/setup.ts",
   testTimeout: 30000,
+  // Executar testes sequencialmente para evitar conflitos de banco
+  maxWorkers: 1,
 };
 
 export default config;

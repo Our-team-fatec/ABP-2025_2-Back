@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import path from "path";
 
 // 🚀 Cliente S3 otimizado com timeout e configurações de performance
-const s3 = new S3Client({ 
+const s3 = new S3Client({
   region: process.env.AWS_REGION,
   requestHandler: {
     requestTimeout: 10000, // 10 segundos timeout
@@ -24,13 +24,13 @@ export const uploadToS3 = async (file: Express.Multer.File, folder: string) => {
     ACL: "private" as ObjectCannedACL,
     // 🚀 Otimizações para upload mais rápido
     Metadata: {
-      'original-name': file.originalname,
-      'upload-time': new Date().toISOString(),
-    }
+      "original-name": file.originalname,
+      "upload-time": new Date().toISOString(),
+    },
   };
 
   const command = new PutObjectCommand(uploadParams);
-  
+
   // 🚀 Upload com timeout e error handling otimizado
   try {
     await s3.send(command);

@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { getPrismaClient } from "../config/db";
 import ResponseHelper from "../utils/responseHelper";
 import { Especie } from "../generated/prisma";
-import { uploadToS3 } from "../utils/s3Upload";
 import { processImagesAsync } from "../utils/asyncImageUpload";
 
 const prisma = getPrismaClient();
@@ -62,7 +61,7 @@ class PetsController {
       // 🚀 UPLOAD ASSÍNCRONO: Processa imagens em background
       if (req.files && Array.isArray(req.files) && req.files.length > 0) {
         // Inicia processamento assíncrono (não bloqueia resposta)
-        processImagesAsync(req.files, pet.id).catch(error => {
+        processImagesAsync(req.files, pet.id).catch((error) => {
           console.error("Erro no processamento assíncrono de imagens:", error);
         });
 
@@ -71,7 +70,7 @@ class PetsController {
           ...ResponseHelper.success("Pet criado com sucesso", pet),
           message: "Pet criado! Imagens estão sendo processadas em segundo plano.",
           imagesProcessing: true,
-          imageCount: req.files.length
+          imageCount: req.files.length,
         });
       }
 
@@ -241,7 +240,7 @@ class PetsController {
       // 🚀 UPLOAD ASSÍNCRONO: Processa novas imagens em background
       if (req.files && Array.isArray(req.files) && req.files.length > 0) {
         // Inicia processamento assíncrono (não bloqueia resposta)
-        processImagesAsync(req.files, id).catch(error => {
+        processImagesAsync(req.files, id).catch((error) => {
           console.error("Erro no processamento assíncrono de imagens:", error);
         });
 
@@ -250,7 +249,7 @@ class PetsController {
           ...ResponseHelper.success("Pet atualizado com sucesso", updatedPet),
           message: "Pet atualizado! Novas imagens estão sendo processadas em segundo plano.",
           imagesProcessing: true,
-          imageCount: req.files.length
+          imageCount: req.files.length,
         });
       }
 
@@ -289,12 +288,14 @@ class PetsController {
         return res.status(404).json(ResponseHelper.error("Pet não encontrado", 404));
       }
 
-      return res.json(ResponseHelper.success("Status das imagens", {
-        petId: pet.id,
-        petName: pet.nome,
-        totalImages: pet.imagens.length,
-        images: pet.imagens,
-      }));
+      return res.json(
+        ResponseHelper.success("Status das imagens", {
+          petId: pet.id,
+          petName: pet.nome,
+          totalImages: pet.imagens.length,
+          images: pet.imagens,
+        }),
+      );
     } catch (error) {
       console.error("Erro ao buscar status das imagens:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));

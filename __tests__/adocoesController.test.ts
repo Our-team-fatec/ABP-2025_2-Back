@@ -52,52 +52,31 @@ describe("AdocoesController", () => {
   let testAdocao: any;
 
   beforeAll(async () => {
-    try {
-      // Verificar conexão com o banco
-      await prisma.$connect();
-      
-      // Verificar se as tabelas existem
-      const tableCheck = await prisma.$queryRaw`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = 'adocoes'
-        ) as table_exists
-      `;
-      
-      if (!Array.isArray(tableCheck) || !tableCheck[0]?.table_exists) {
-        throw new Error("Tabela 'adocoes' não encontrada. Execute as migrações primeiro.");
-      }
+    // Limpar dados de teste
+    await prisma.adocoes.deleteMany({});
+    await prisma.pets.deleteMany({});
+    await prisma.usuarios.deleteMany({});
 
-      // Limpar dados de teste
-      await prisma.adocoes.deleteMany({});
-      await prisma.pets.deleteMany({});
-      await prisma.usuarios.deleteMany({});
+    // Criar usuário de teste
+    testUser = await prisma.usuarios.create({
+      data: {
+        id: "test-user-id",
+        nome: "Testador",
+        email: "testador@teste.com",
+        senha: "senha123",
+        endereco: "Rua Teste, 123",
+      },
+    });
 
-      // Criar usuário de teste
-      testUser = await prisma.usuarios.create({
-        data: {
-          id: "test-user-id",
-          nome: "Testador",
-          email: "testador@teste.com",
-          senha: "senha123",
-          endereco: "Rua Teste, 123",
-        },
-      });
-
-      // Criar pet de teste
-      testPet = await prisma.pets.create({
-        data: {
-          nome: "Rex",
-          especie: "CACHORRO",
-          raca: "Labrador",
-          tutor_id: testUser.id,
-        },
-      });
-    } catch (error) {
-      console.error("Erro no setup do teste:", error);
-      throw error;
-    }
+    // Criar pet de teste
+    testPet = await prisma.pets.create({
+      data: {
+        nome: "Rex",
+        especie: "CACHORRO",
+        raca: "Labrador",
+        tutor_id: testUser.id,
+      },
+    });
   });
 
   afterAll(async () => {

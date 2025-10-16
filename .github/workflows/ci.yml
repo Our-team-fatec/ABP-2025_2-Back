@@ -77,28 +77,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:supersecurepassword@localhost:5432/davinci_pets?schema=public
 
       - name: Rodar migrações no banco de teste
-        run: |
-          npm run prisma:migrate:deploy
-          npm run prisma:generate
-        env:
-          DATABASE_URL: postgresql://postgres:supersecurepassword@localhost:5432/davinci_pets?schema=public
-
-      - name: Verificar tabelas do banco
-        run: |
-          npx prisma db seed --schema ./prisma/schema.prisma || echo "Sem seed configurado"
-          node -e "
-            const { PrismaClient } = require('./src/generated/prisma');
-            const prisma = new PrismaClient();
-            prisma.\$queryRaw\`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'\`
-              .then(tables => {
-                console.log('Tabelas encontradas:', tables);
-                return prisma.\$disconnect();
-              })
-              .catch(err => {
-                console.error('Erro ao verificar tabelas:', err);
-                process.exit(1);
-              });
-          "
+        run: npm run prisma:migrate:deploy
         env:
           DATABASE_URL: postgresql://postgres:supersecurepassword@localhost:5432/davinci_pets?schema=public
 

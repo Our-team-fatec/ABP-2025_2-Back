@@ -2,7 +2,7 @@ import multer from "multer";
 import { Request, Response, NextFunction } from "express";
 import sharp from "sharp";
 
-const IMAGE_SIZE_LIMIT = 5 * 1024 * 1024;
+const IMAGE_SIZE_LIMIT = 5 * 1024 * 1024; // Reduzido para 5MB
 
 const imageFileFilter = (
   req: Request,
@@ -26,7 +26,20 @@ const imageUpload = multer({
 });
 
 const optimizeImage = async (fileBuffer: Buffer) => {
-  return await sharp(fileBuffer).resize({ width: 800 }).jpeg({ quality: 80 }).toBuffer();
+  // 🚀 OTIMIZAÇÃO: Configuração mais leve do Sharp
+  return await sharp(fileBuffer)
+    .resize({
+      width: 600,
+      height: 600,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .jpeg({
+      quality: 70, // Reduzido para 70%
+      progressive: false, // Desabilitado para ser mais rápido
+      mozjpeg: true, // Usa mozjpeg para melhor compressão
+    })
+    .toBuffer();
 };
 
 const preserveBody = (type: "image" | "images") => {
@@ -55,9 +68,13 @@ const preserveBody = (type: "image" | "images") => {
         }
 
         if (req.files && Array.isArray(req.files)) {
-          for (const file of req.files) {
+          // 🚀 OTIMIZAÇÃO: Processamento paralelo das imagens
+          const optimizationPromises = req.files.map(async (file) => {
             file.buffer = await optimizeImage(file.buffer);
-          }
+            return file;
+          });
+
+          await Promise.all(optimizationPromises);
         }
 
         req.body = { ...originalBody, ...req.body };

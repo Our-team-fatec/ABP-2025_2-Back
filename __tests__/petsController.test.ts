@@ -49,6 +49,9 @@ describe("PetsController", () => {
         nome: "Rex",
         especie: Especie.CACHORRO,
         raca: "Golden Retriever",
+        porte: "GRANDE",
+        genero: "MACHO",
+        cor: "Dourado",
         userId: "user-123",
       });
       const res = mockResponse();
@@ -59,6 +62,9 @@ describe("PetsController", () => {
         nome: "Rex",
         especie: Especie.CACHORRO,
         raca: "Golden Retriever",
+        porte: "GRANDE",
+        genero: "MACHO",
+        cor: "Dourado",
         tutor_id: "user-123",
         tutor: { id: "user-123", nome: "João", email: "joao@test.com" },
         imagens: [],
@@ -74,6 +80,9 @@ describe("PetsController", () => {
           nome: "Rex",
           especie: Especie.CACHORRO,
           raca: "Golden Retriever",
+          porte: "GRANDE",
+          genero: "MACHO",
+          cor: "Dourado",
           tutor_id: "user-123",
         },
         include: {
@@ -117,7 +126,7 @@ describe("PetsController", () => {
       const req = mockRequest({
         userId: "user-123",
         nome: "Rex",
-        // especie e raca ausentes
+        // especie, raca, porte, genero e cor ausentes
       });
       const res = mockResponse();
 
@@ -126,7 +135,7 @@ describe("PetsController", () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         status: "error",
-        message: "Nome, espécie e raça são obrigatórios",
+        message: "Nome, espécie, raça, porte, gênero e cor são obrigatórios",
         code: 400,
       });
     });
@@ -137,6 +146,9 @@ describe("PetsController", () => {
         nome: "Rex",
         especie: "PASSARO", // espécie inválida
         raca: "Golden Retriever",
+        porte: "MEDIO",
+        genero: "MACHO",
+        cor: "Amarelo",
       });
       const res = mockResponse();
 

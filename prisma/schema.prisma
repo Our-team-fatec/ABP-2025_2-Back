@@ -18,6 +18,17 @@ enum Especie {
   GATO
 }
 
+enum Porte {
+  PEQUENO
+  MEDIO
+  GRANDE
+}
+
+enum Genero {
+  MACHO
+  FEMEA
+}
+
 enum TipoResidencia {
   CASA
   APARTAMENTO
@@ -56,6 +67,9 @@ model pets {
   nome          String 
   especie       Especie
   raca          String
+  porte         Porte
+  genero        Genero
+  cor           String
   criado_em     DateTime  @default(now())
   atualizado_em DateTime  @updatedAt
   removido_em   DateTime?

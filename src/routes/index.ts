@@ -4,11 +4,17 @@ import healthRoutes from "./healthRoutes";
 import authRoutes from "./authRoutes";
 import petsRoutes from "./petsRoutes";
 import adocoesRoutes from "./adocoesRoutes";
+import saudeRoutes from "./saudeRoutes";
+import vacinasRoutes from "./vacinasRoutes";
+import vacinasPetRoutes from "./vacinasPetRoutes";
 
 const routes = Router();
 routes.use("/auth", authRoutes);
 routes.use("/users", userRoutes);
 routes.use("/pets", petsRoutes);
 routes.use("/adocoes", adocoesRoutes);
+routes.use("/saude", saudeRoutes);
+routes.use("/vacinas", vacinasRoutes);
+routes.use("/pets-vacinas", vacinasPetRoutes);
 routes.use("/health", healthRoutes);
 export default routes;

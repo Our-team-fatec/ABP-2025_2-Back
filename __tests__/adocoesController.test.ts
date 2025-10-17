@@ -52,8 +52,10 @@ describe("AdocoesController", () => {
   let testAdocao: any;
 
   beforeAll(async () => {
-    // Limpar dados de teste
+    // Limpar dados de teste (ordem importa por causa das foreign keys)
     await prisma.adocoes.deleteMany({});
+    await prisma.saude.deleteMany({});
+    await prisma.vacinas_pet.deleteMany({});
     await prisma.pets.deleteMany({});
     await prisma.usuarios.deleteMany({});
 
@@ -83,8 +85,10 @@ describe("AdocoesController", () => {
   });
 
   afterAll(async () => {
-    // Limpar dados de teste
+    // Limpar dados de teste (ordem importa por causa das foreign keys)
     await prisma.adocoes.deleteMany({});
+    await prisma.saude.deleteMany({});
+    await prisma.vacinas_pet.deleteMany({});
     await prisma.pets.deleteMany({});
     await prisma.usuarios.deleteMany({});
     await prisma.$disconnect();

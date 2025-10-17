@@ -185,14 +185,10 @@ class VacinasPetController {
           .json(ResponseHelper.error("Pet não encontrado ou não pertence ao usuário", 404));
       }
 
-      return res
-        .status(200)
-        .json(ResponseHelper.success("Informações completas do pet", { pet }));
+      return res.status(200).json(ResponseHelper.success("Informações completas do pet", { pet }));
     } catch (error) {
       console.error("Erro ao buscar informações do pet:", error);
-      return res
-        .status(500)
-        .json(ResponseHelper.error("Erro ao buscar informações do pet", 500));
+      return res.status(500).json(ResponseHelper.error("Erro ao buscar informações do pet", 500));
     }
   }
 
@@ -227,7 +223,10 @@ class VacinasPetController {
       }
 
       // Atualizar
-      const dataToUpdate: any = {};
+      const dataToUpdate: {
+        data_aplicacao?: Date;
+        observacoes?: string | null;
+      } = {};
       if (data_aplicacao) dataToUpdate.data_aplicacao = new Date(data_aplicacao);
       if (observacoes !== undefined) dataToUpdate.observacoes = observacoes;
 
@@ -239,13 +238,11 @@ class VacinasPetController {
         },
       });
 
-      return res
-        .status(200)
-        .json(
-          ResponseHelper.success("Vacina do pet atualizada com sucesso", {
-            vacinaPet: vacinaAtualizada,
-          }),
-        );
+      return res.status(200).json(
+        ResponseHelper.success("Vacina do pet atualizada com sucesso", {
+          vacinaPet: vacinaAtualizada,
+        }),
+      );
     } catch (error) {
       console.error("Erro ao atualizar vacina do pet:", error);
       return res.status(500).json(ResponseHelper.error("Erro ao atualizar vacina do pet", 500));

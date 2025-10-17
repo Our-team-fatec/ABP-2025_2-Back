@@ -11,7 +11,7 @@ class VacinasController {
     try {
       const { especie } = req.query;
 
-      const whereClause: any = {
+      const whereClause: { removido_em: null; especies?: { has: Especie } } = {
         removido_em: null,
       };
 
@@ -22,7 +22,7 @@ class VacinasController {
             .status(400)
             .json(ResponseHelper.error("Espécie deve ser CACHORRO ou GATO", 400));
         }
-        whereClause.especies = { has: especie };
+        whereClause.especies = { has: especie as Especie };
       }
 
       const vacinas = await prisma.vacinas.findMany({
@@ -80,9 +80,7 @@ class VacinasController {
       if (!especies || !Array.isArray(especies) || especies.length === 0) {
         return res
           .status(400)
-          .json(
-            ResponseHelper.error("Espécies é obrigatório e deve ser um array não vazio", 400),
-          );
+          .json(ResponseHelper.error("Espécies é obrigatório e deve ser um array não vazio", 400));
       }
 
       // Validar espécies
@@ -99,7 +97,9 @@ class VacinasController {
       });
 
       if (vacinaExistente && !vacinaExistente.removido_em) {
-        return res.status(400).json(ResponseHelper.error("Já existe uma vacina com este nome", 400));
+        return res
+          .status(400)
+          .json(ResponseHelper.error("Já existe uma vacina com este nome", 400));
       }
 
       // Criar vacina
@@ -111,9 +111,7 @@ class VacinasController {
         },
       });
 
-      return res
-        .status(201)
-        .json(ResponseHelper.success("Vacina criada com sucesso", { vacina }));
+      return res.status(201).json(ResponseHelper.success("Vacina criada com sucesso", { vacina }));
     } catch (error) {
       console.error("Erro ao criar vacina:", error);
       return res.status(500).json(ResponseHelper.error("Erro ao criar vacina", 500));
@@ -177,7 +175,11 @@ class VacinasController {
       }
 
       // Atualizar vacina
-      const dataToUpdate: any = {};
+      const dataToUpdate: {
+        nome?: string;
+        descricao?: string | null;
+        especies?: Especie[];
+      } = {};
       if (nome) dataToUpdate.nome = nome;
       if (descricao !== undefined) dataToUpdate.descricao = descricao;
       if (especies) dataToUpdate.especies = especies;

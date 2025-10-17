@@ -10,17 +10,19 @@ class PetsController {
   // Criar pet
   public async createPet(req: Request, res: Response): Promise<Response> {
     try {
-      const { nome, especie, raca, userId } = req.body;
+      const { nome, especie, raca, porte, genero, cor, userId } = req.body;
 
       if (!userId) {
         return res.status(401).json(ResponseHelper.error("Usuário não autenticado", 401));
       }
 
       // Validações
-      if (!nome || !especie || !raca) {
+      if (!nome || !especie || !raca || !porte || !genero || !cor) {
         return res
           .status(400)
-          .json(ResponseHelper.error("Nome, espécie e raça são obrigatórios", 400));
+          .json(
+            ResponseHelper.error("Nome, espécie, raça, porte, gênero e cor são obrigatórios", 400),
+          );
       }
 
       if (!Object.values(Especie).includes(especie)) {
@@ -44,6 +46,9 @@ class PetsController {
           nome,
           especie,
           raca,
+          porte,
+          genero,
+          cor,
           tutor_id: userId,
         },
         include: {
@@ -192,7 +197,7 @@ class PetsController {
   public async updatePet(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
-      const { nome, especie, raca, userId } = req.body;
+      const { nome, especie, raca, porte, genero, cor, userId } = req.body;
 
       if (!userId) {
         return res.status(401).json(ResponseHelper.error("Usuário não autenticado", 401));
@@ -222,6 +227,9 @@ class PetsController {
           ...(nome && { nome }),
           ...(especie && { especie }),
           ...(raca && { raca }),
+          ...(porte && { porte }),
+          ...(genero && { genero }),
+          ...(cor && { cor }),
         },
         include: {
           tutor: {

@@ -74,6 +74,9 @@ describe("AdocoesController", () => {
         nome: "Rex",
         especie: "CACHORRO",
         raca: "Labrador",
+        porte: "GRANDE",
+        genero: "MACHO",
+        cor: "Dourado",
         tutor_id: testUser.id,
       },
     });

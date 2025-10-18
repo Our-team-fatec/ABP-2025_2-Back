@@ -78,6 +78,8 @@ model pets {
   adocao      adocoes?
   formularios formularios[]
   imagens     imagens[]
+  saude       saude?
+  vacinas     vacinas_pet[]
   
   @@index([tutor_id])
   @@index([especie])
@@ -157,4 +159,49 @@ model imagens {
   
   @@index([pet_id])
   @@index([removido_em])
+}
+
+// Modelo de saúde do pet
+model saude {
+  id            String    @id @default(uuid())
+  pet_id        String    @unique // Um pet tem apenas um registro de saúde
+  pet           pets      @relation(fields: [pet_id], references: [id])
+  castrado      Boolean   @default(false)
+  criado_em     DateTime  @default(now())
+  atualizado_em DateTime  @updatedAt
+  
+  @@index([pet_id])
+}
+
+// Modelo de vacinas cadastradas no sistema
+model vacinas {
+  id            String          @id @default(uuid())
+  nome          String          @unique
+  descricao     String?
+  especies      Especie[]       // Vacina pode ser para uma ou mais espécies
+  criado_em     DateTime        @default(now())
+  atualizado_em DateTime        @updatedAt
+  removido_em   DateTime?
+  
+  // Relacionamentos
+  pets          vacinas_pet[]
+  
+  @@index([removido_em])
+}
+
+// Modelo de vacinas aplicadas em pets
+model vacinas_pet {
+  id                String    @id @default(uuid())
+  pet_id            String
+  pet               pets      @relation(fields: [pet_id], references: [id])
+  vacina_id         String
+  vacina            vacinas   @relation(fields: [vacina_id], references: [id])
+  data_aplicacao    DateTime  @default(now())
+  observacoes       String?
+  criado_em         DateTime  @default(now())
+  atualizado_em     DateTime  @updatedAt
+  
+  @@unique([pet_id, vacina_id]) // Um pet não pode ter a mesma vacina registrada duas vezes
+  @@index([pet_id])
+  @@index([vacina_id])
 }

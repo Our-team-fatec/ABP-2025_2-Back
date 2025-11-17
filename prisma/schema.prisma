@@ -70,6 +70,7 @@ model pets {
   porte         Porte
   genero        Genero
   cor           String
+  idade         Int
   criado_em     DateTime  @default(now())
   atualizado_em DateTime  @updatedAt
   removido_em   DateTime?

@@ -52,6 +52,7 @@ describe("PetsController", () => {
         porte: "GRANDE",
         genero: "MACHO",
         cor: "Dourado",
+        idade: "3",
         userId: "user-123",
       });
       const res = mockResponse();
@@ -65,6 +66,7 @@ describe("PetsController", () => {
         porte: "GRANDE",
         genero: "MACHO",
         cor: "Dourado",
+        idade: 3,
         tutor_id: "user-123",
         tutor: { id: "user-123", nome: "João", email: "joao@test.com" },
         imagens: [],
@@ -83,6 +85,7 @@ describe("PetsController", () => {
           porte: "GRANDE",
           genero: "MACHO",
           cor: "Dourado",
+          idade: 3,
           tutor_id: "user-123",
         },
         include: {
@@ -135,7 +138,7 @@ describe("PetsController", () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         status: "error",
-        message: "Nome, espécie, raça, porte, gênero e cor são obrigatórios",
+        message: "Nome, espécie, raça, porte, gênero, idade e cor são obrigatórios",
         code: 400,
       });
     });
@@ -149,6 +152,7 @@ describe("PetsController", () => {
         porte: "MEDIO",
         genero: "MACHO",
         cor: "Amarelo",
+        idade: "2",
       });
       const res = mockResponse();
 

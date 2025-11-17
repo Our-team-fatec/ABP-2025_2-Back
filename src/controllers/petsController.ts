@@ -10,18 +10,29 @@ class PetsController {
   // Criar pet
   public async createPet(req: Request, res: Response): Promise<Response> {
     try {
-      const { nome, especie, raca, porte, genero, cor, userId, idade = 0 } = req.body;
+      const { nome, especie, raca, porte, genero, cor, userId, idade: idadeString } = req.body;
 
       if (!userId) {
         return res.status(401).json(ResponseHelper.error("Usuário não autenticado", 401));
       }
 
       // Validações
-      if (!nome || !especie || !raca || !porte || !genero || !cor || !idade) {
+      if (!nome || !especie || !raca || !porte || !genero || !cor || !idadeString) {
         return res
           .status(400)
           .json(
             ResponseHelper.error("Nome, espécie, raça, porte, gênero, idade e cor são obrigatórios", 400),
+          );
+      }
+
+      // Converter idade de string para número (FormData sempre envia strings)
+      const idade = parseInt(idadeString, 10);
+
+      if (isNaN(idade) || idade < 0) {
+        return res
+          .status(400)
+          .json(
+            ResponseHelper.error("Idade deve ser um número válido e não negativo", 400),
           );
       }
 

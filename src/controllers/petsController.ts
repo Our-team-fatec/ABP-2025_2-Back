@@ -498,6 +498,89 @@ class PetsController {
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));
     }
   }
+
+  // Buscar pets por nome (busca aproximada)
+  public async searchPetsByName(req: Request, res: Response): Promise<Response> {
+    try {
+      const { nome, page = 1, limit = 10 } = req.query;
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(401).json(ResponseHelper.error("Usuário não autenticado", 401));
+      }
+
+      if (!nome || typeof nome !== "string") {
+        return res.status(400).json(ResponseHelper.error("Nome é obrigatório para busca", 400));
+      }
+
+      const skip = (Number(page) - 1) * Number(limit);
+
+      const pets = await prisma.pets.findMany({
+        where: {
+          tutor_id: userId,
+          nome: {
+            contains: nome,
+            mode: "insensitive", // Busca case-insensitive
+          },
+          removido_em: null,
+        },
+        include: {
+          tutor: {
+            select: {
+              id: true,
+              nome: true,
+              email: true,
+              endereco: true,
+            },
+          },
+          imagens: {
+            where: { removido_em: null },
+          },
+          adocao: {
+            where: { removido_em: null },
+            select: {
+              id: true,
+              descricao: true,
+              endereco: true,
+              criado_em: true,
+            },
+          },
+        },
+        skip,
+        take: Number(limit),
+        orderBy: {
+          criado_em: "desc",
+        },
+      });
+
+      const total = await prisma.pets.count({
+        where: {
+          tutor_id: userId,
+          nome: {
+            contains: nome,
+            mode: "insensitive",
+          },
+          removido_em: null,
+        },
+      });
+
+      const response = {
+        pets,
+        searchTerm: nome,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit)),
+        },
+      };
+
+      return res.json(ResponseHelper.success("Busca realizada com sucesso", response));
+    } catch (error) {
+      console.error("Erro ao buscar pets por nome:", error);
+      return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));
+    }
+  }
 }
 
 export default new PetsController();

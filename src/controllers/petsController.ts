@@ -209,7 +209,7 @@ class PetsController {
   public async updatePet(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
-      const { nome, especie, raca, porte, genero, cor, idade, userId } = req.body;
+      const { nome, especie, raca, porte, genero, cor, idade: idadeString, userId } = req.body;
 
       if (!userId) {
         return res.status(401).json(ResponseHelper.error("Usuário não autenticado", 401));
@@ -233,6 +233,19 @@ class PetsController {
         return res.status(400).json(ResponseHelper.error("Espécie deve ser CACHORRO ou GATO", 400));
       }
 
+      // Converter idade de string para número se fornecida (FormData sempre envia strings)
+      let idade: number | undefined;
+      if (idadeString !== undefined && idadeString !== null && idadeString !== "") {
+        idade = parseInt(idadeString, 10);
+        if (isNaN(idade) || idade < 0) {
+          return res
+            .status(400)
+            .json(
+              ResponseHelper.error("Idade deve ser um número válido e não negativo", 400),
+            );
+        }
+      }
+
       const updatedPet = await prisma.pets.update({
         where: { id },
         data: {
@@ -242,7 +255,7 @@ class PetsController {
           ...(porte && { porte }),
           ...(genero && { genero }),
           ...(cor && { cor }),
-          ...(idade && { idade }),
+          ...(idade !== undefined && { idade }),
         },
         include: {
           tutor: {

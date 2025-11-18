@@ -18,7 +18,7 @@ services:
       - /app/node_modules
     depends_on:
       - postgres
-    command: sh -c "npx prisma migrate deploy && npm run dev"
+    #command: sh -c "npx prisma migrate deploy && npm run dev"
     networks:
       - app-network
 

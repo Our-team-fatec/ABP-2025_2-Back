@@ -79,6 +79,7 @@ describe("AdocoesController", () => {
         porte: "GRANDE",
         genero: "MACHO",
         cor: "Dourado",
+        idade: 3,
         tutor_id: testUser.id,
       },
     });

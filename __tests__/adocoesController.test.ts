@@ -109,6 +109,7 @@ describe("AdocoesController", () => {
         pet_id: testPet.id,
         descricao: "Cachorro dócil e carinhoso",
         endereco: "São Paulo, SP",
+        contato: "11987654321",
       };
 
       const response = await request(app).post("/adocoes").send(adocaoData).expect(201);
@@ -126,7 +127,7 @@ describe("AdocoesController", () => {
       const response = await request(app).post("/adocoes").send({}).expect(400);
 
       expect(response.body.status).toBe("error");
-      expect(response.body.message).toBe("Pet ID, descrição e endereço são obrigatórios");
+      expect(response.body.message).toBe("Pet ID, descrição, endereço e contato são obrigatórios");
     });
   });
 

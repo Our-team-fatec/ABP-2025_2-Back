@@ -7,6 +7,7 @@ import adocoesRoutes from "./adocoesRoutes";
 import saudeRoutes from "./saudeRoutes";
 import vacinasRoutes from "./vacinasRoutes";
 import vacinasPetRoutes from "./vacinasPetRoutes";
+import chatbotRoutes from "./chatbotRoutes";
 
 const routes = Router();
 routes.use("/auth", authRoutes);
@@ -16,5 +17,6 @@ routes.use("/adocoes", adocoesRoutes);
 routes.use("/saude", saudeRoutes);
 routes.use("/vacinas", vacinasRoutes);
 routes.use("/pets-vacinas", vacinasPetRoutes);
+routes.use("/chatbot", chatbotRoutes);
 routes.use("/health", healthRoutes);
 export default routes;

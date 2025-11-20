@@ -9,6 +9,7 @@ const router = Router();
 router.get("/public", petsController.getAllPets); // Listar todos os pets para adoção
 
 // Rotas protegidas (requerem autenticação)
+router.get("/search", authMiddleware, petsController.searchPetsByName); // Buscar pets por nome
 router.post("/", authMiddleware, preserveBody("images"), petsController.createPet); // Criar pet com múltiplas imagens
 router.get("/", authMiddleware, petsController.getUserPets); // Listar pets do usuário
 router.get("/:id", authMiddleware, petsController.getPetById); // Buscar pet por ID

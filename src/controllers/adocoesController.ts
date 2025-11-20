@@ -8,17 +8,17 @@ class AdocoesController {
   // Criar anúncio de adoção
   public async createAdocao(req: Request, res: Response): Promise<Response> {
     try {
-      const { pet_id, descricao, endereco, userId } = req.body;
+      const { pet_id, descricao, endereco, contato, userId } = req.body;
 
       if (!userId) {
         return res.status(401).json(ResponseHelper.error("Usuário não autenticado", 401));
       }
 
       // Validações
-      if (!pet_id || !descricao || !endereco) {
+      if (!pet_id || !descricao || !endereco || !contato) {
         return res
           .status(400)
-          .json(ResponseHelper.error("Pet ID, descrição e endereço são obrigatórios", 400));
+          .json(ResponseHelper.error("Pet ID, descrição, endereço e contato são obrigatórios", 400));
       }
 
       // Verificar se o pet existe e pertence ao usuário
@@ -68,6 +68,7 @@ class AdocoesController {
             doador_id: userId,
             descricao,
             endereco,
+            contato,
             removido_em: null,
             tutor_id: null, // Reset do tutor caso tenha sido adotado antes
             atualizado_em: new Date(),
@@ -107,6 +108,7 @@ class AdocoesController {
             pet_id,
             descricao,
             endereco,
+            contato,
           },
           include: {
             doador: {
@@ -301,7 +303,7 @@ class AdocoesController {
   public async updateAdocao(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
-      const { descricao, endereco, userId } = req.body;
+      const { descricao, endereco, contato, userId } = req.body;
 
       if (!userId) {
         return res.status(401).json(ResponseHelper.error("Usuário não autenticado", 401));
@@ -339,6 +341,7 @@ class AdocoesController {
         data: {
           ...(descricao && { descricao }),
           ...(endereco && { endereco }),
+          ...(contato && { contato }),
           atualizado_em: new Date(),
         },
         include: {

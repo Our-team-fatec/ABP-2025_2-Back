@@ -70,6 +70,7 @@ model pets {
   porte         Porte
   genero        Genero
   cor           String
+  idade         Int @default(0)
   criado_em     DateTime  @default(now())
   atualizado_em DateTime  @updatedAt
   removido_em   DateTime?
@@ -97,6 +98,7 @@ model adocoes {
   pet           pets      @relation(fields: [pet_id], references: [id])
   descricao     String
   endereco      String
+  contato       String    // Número de telefone para contato
   criado_em     DateTime  @default(now())
   atualizado_em DateTime  @updatedAt
   removido_em   DateTime?

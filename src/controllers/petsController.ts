@@ -10,18 +10,29 @@ class PetsController {
   // Criar pet
   public async createPet(req: Request, res: Response): Promise<Response> {
     try {
-      const { nome, especie, raca, porte, genero, cor, userId } = req.body;
+      const { nome, especie, raca, porte, genero, cor, userId, idade: idadeString } = req.body;
 
       if (!userId) {
         return res.status(401).json(ResponseHelper.error("Usuário não autenticado", 401));
       }
 
       // Validações
-      if (!nome || !especie || !raca || !porte || !genero || !cor) {
+      if (!nome || !especie || !raca || !porte || !genero || !cor || !idadeString) {
         return res
           .status(400)
           .json(
-            ResponseHelper.error("Nome, espécie, raça, porte, gênero e cor são obrigatórios", 400),
+            ResponseHelper.error("Nome, espécie, raça, porte, gênero, idade e cor são obrigatórios", 400),
+          );
+      }
+
+      // Converter idade de string para número (FormData sempre envia strings)
+      const idade = parseInt(idadeString, 10);
+
+      if (isNaN(idade) || idade < 0) {
+        return res
+          .status(400)
+          .json(
+            ResponseHelper.error("Idade deve ser um número válido e não negativo", 400),
           );
       }
 
@@ -49,6 +60,7 @@ class PetsController {
           porte,
           genero,
           cor,
+          idade,
           tutor_id: userId,
         },
         include: {
@@ -197,7 +209,7 @@ class PetsController {
   public async updatePet(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
-      const { nome, especie, raca, porte, genero, cor, userId } = req.body;
+      const { nome, especie, raca, porte, genero, cor, idade: idadeString, userId } = req.body;
 
       if (!userId) {
         return res.status(401).json(ResponseHelper.error("Usuário não autenticado", 401));
@@ -221,6 +233,19 @@ class PetsController {
         return res.status(400).json(ResponseHelper.error("Espécie deve ser CACHORRO ou GATO", 400));
       }
 
+      // Converter idade de string para número se fornecida (FormData sempre envia strings)
+      let idade: number | undefined;
+      if (idadeString !== undefined && idadeString !== null && idadeString !== "") {
+        idade = parseInt(idadeString, 10);
+        if (isNaN(idade) || idade < 0) {
+          return res
+            .status(400)
+            .json(
+              ResponseHelper.error("Idade deve ser um número válido e não negativo", 400),
+            );
+        }
+      }
+
       const updatedPet = await prisma.pets.update({
         where: { id },
         data: {
@@ -230,6 +255,7 @@ class PetsController {
           ...(porte && { porte }),
           ...(genero && { genero }),
           ...(cor && { cor }),
+          ...(idade !== undefined && { idade }),
         },
         include: {
           tutor: {
@@ -392,6 +418,7 @@ class PetsController {
               id: true,
               descricao: true,
               endereco: true,
+              contato: true,
               criado_em: true,
             },
           },
@@ -469,6 +496,90 @@ class PetsController {
       return res.json(ResponseHelper.success("Imagem removida com sucesso", null));
     } catch (error) {
       console.error("Erro ao deletar imagem:", error);
+      return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));
+    }
+  }
+
+  // Buscar pets por nome (busca aproximada)
+  public async searchPetsByName(req: Request, res: Response): Promise<Response> {
+    try {
+      const { nome, page = 1, limit = 10 } = req.query;
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(401).json(ResponseHelper.error("Usuário não autenticado", 401));
+      }
+
+      if (!nome || typeof nome !== "string") {
+        return res.status(400).json(ResponseHelper.error("Nome é obrigatório para busca", 400));
+      }
+
+      const skip = (Number(page) - 1) * Number(limit);
+
+      const pets = await prisma.pets.findMany({
+        where: {
+          tutor_id: userId,
+          nome: {
+            contains: nome,
+            mode: "insensitive", // Busca case-insensitive
+          },
+          removido_em: null,
+        },
+        include: {
+          tutor: {
+            select: {
+              id: true,
+              nome: true,
+              email: true,
+              endereco: true,
+            },
+          },
+          imagens: {
+            where: { removido_em: null },
+          },
+          adocao: {
+            where: { removido_em: null },
+            select: {
+              id: true,
+              descricao: true,
+              endereco: true,
+              contato: true,
+              criado_em: true,
+            },
+          },
+        },
+        skip,
+        take: Number(limit),
+        orderBy: {
+          criado_em: "desc",
+        },
+      });
+
+      const total = await prisma.pets.count({
+        where: {
+          tutor_id: userId,
+          nome: {
+            contains: nome,
+            mode: "insensitive",
+          },
+          removido_em: null,
+        },
+      });
+
+      const response = {
+        pets,
+        searchTerm: nome,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit)),
+        },
+      };
+
+      return res.json(ResponseHelper.success("Busca realizada com sucesso", response));
+    } catch (error) {
+      console.error("Erro ao buscar pets por nome:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno do servidor", 500));
     }
   }

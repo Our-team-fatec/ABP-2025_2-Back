@@ -1,9 +1,13 @@
 import { Router } from "express";
 import chatbotController from "../controllers/chatbotController";
+import chatbotStreamController from "../controllers/chatbotStreamController";
 
 const router = Router();
 
 router.post("/chat", chatbotController.chat.bind(chatbotController));
+
+// Nova rota de streaming
+router.post("/chat/stream", chatbotStreamController.chatStream.bind(chatbotStreamController));
 
 router.post(
   "/conversation/:conversationId/clear",

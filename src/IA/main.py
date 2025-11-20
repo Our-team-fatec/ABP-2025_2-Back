@@ -60,6 +60,19 @@ class DaVinciPetsChatBot:
             print(f"Tipo do erro: {type(e).__name__}")
             error_message = f"Desculpe, ocorreu um erro ao processar a mensagem: {str(e)[:200]}"
             return error_message
+    
+    def stream_chat(self, user_message: str):
+        """Envia mensagem e retorna generator para streaming"""
+        try:
+            response = self.chat_session.send_message(user_message, stream=True)
+            for chunk in response:
+                if chunk.text:
+                    yield chunk.text
+        except Exception as e:
+            print(f"\n⚠️  ERRO DETALHADO: {str(e)}", file=sys.stderr, flush=True)
+            print(f"Tipo do erro: {type(e).__name__}", file=sys.stderr, flush=True)
+            error_message = f"Desculpe, ocorreu um erro ao processar a mensagem: {str(e)[:200]}"
+            yield error_message
         
     def reset_conversation(self):
         self.chat_session = self.model.start_chat(history=[])
@@ -89,6 +102,15 @@ def api_mode():
                 message = data.get('message', '')
                 response = chatbot.chat(message)
                 print(json.dumps({"success": True, "response": response}), flush=True)
+            
+            elif command == 'stream_chat':
+                message = data.get('message', '')
+                try:
+                    for chunk_text in chatbot.stream_chat(message):
+                        print(json.dumps({"type": "chunk", "text": chunk_text}), flush=True)
+                    print(json.dumps({"type": "done"}), flush=True)
+                except Exception as e:
+                    print(json.dumps({"type": "error", "error": str(e)}), flush=True)
                 
             elif command == 'reset':
                 chatbot.reset_conversation()

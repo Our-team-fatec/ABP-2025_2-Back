@@ -80,9 +80,10 @@ class ChatbotController {
 
   public async chat(req: Request, res: Response): Promise<Response> {
     try {
+      console.log('📨 Recebendo mensagem do chatbot:', req.body);
+      
       const { message, conversationId } = req.body as ChatRequest;
 
-      // Validações
       if (!message || message.trim() === "") {
         return res.status(400).json(ResponseHelper.error("Mensagem é obrigatória", 400));
       }
@@ -93,14 +94,14 @@ class ChatbotController {
           .json(ResponseHelper.error("Mensagem muito longa (máximo 5000 caracteres)", 400));
       }
 
-      // Gerar ID de conversa se não existir
       const convId = conversationId || this.generateConversationId();
+      console.log('🆔 Conversation ID:', convId);
 
-      // Obter ou criar processo Python
       const python = this.getChatbotProcess(convId);
 
-      // Enviar mensagem e aguardar resposta
+      console.log('🤖 Enviando para IA...');
       const result = await this.sendCommand(python, "chat", message);
+      console.log('✅ Resposta da IA recebida');
 
       if (!result.success) {
         return res
@@ -115,7 +116,7 @@ class ChatbotController {
         }),
       );
     } catch (error) {
-      console.error("Erro no chatbot:", error);
+      console.error("❌ Erro no chatbot:", error);
       return res.status(500).json(ResponseHelper.error("Erro interno no chatbot", 500));
     }
   }
@@ -136,7 +137,6 @@ class ChatbotController {
         return res.status(404).json(ResponseHelper.error("Conversa não encontrada", 404));
       }
 
-      // Enviar comando de reset
       await this.sendCommand(python, "reset");
 
       return res.json(ResponseHelper.success("Conversa limpa com sucesso"));

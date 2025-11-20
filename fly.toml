@@ -1,10 +1,10 @@
-# fly.toml app configuration file generated for davincipets-api on 2025-10-02T01:28:48Z
+# fly.toml app configuration file generated for davinci-pets-back on 2025-11-20T02:21:18Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'davincipets-api'
-primary_region = 'iad'
+app = 'davinci-pets-back'
+primary_region = 'gru'
 
 [build]
 

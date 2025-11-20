@@ -25,8 +25,9 @@ app.use(errorMiddleware);
 (async () => {
   await connectDB();
 
-  app.listen(PORT, () => {
-    console.log(`🚀 Server ouvindo em http://localhost:${PORT}`);
+  const host = '0.0.0.0';
+  app.listen(PORT as number, host, () => {
+    console.log(`🚀 Server ouvindo em http://${host}:${PORT}`);
   });
 })();
 

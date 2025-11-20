@@ -18,6 +18,14 @@ class DaVinciPetsChatBot:
             "max_output_tokens": int(os.getenv('AI_MAX_TOKENS', 1000)),
         }
         
+        # Configurações de segurança para evitar bloqueios
+        self.safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ]
+        
         self.system_prompt = """ 
         Você é um assistente virtual especializado em pets (cães e gatos).
         Seu objetivo é ajudar tutores de pets respondendo perguntas sobre:
@@ -43,8 +51,9 @@ class DaVinciPetsChatBot:
         """ 
         
         self.model = genai.GenerativeModel(
-            model_name='models/gemini-2.5-flash', 
+            model_name='models/gemini-1.5-flash', 
             generation_config=self.generation_config,
+            safety_settings=self.safety_settings,
         )
         
         self.chat_session = self.model.start_chat(history=[])
@@ -54,7 +63,16 @@ class DaVinciPetsChatBot:
     def chat(self, user_message: str) -> str:
         try:
             response = self.chat_session.send_message(user_message)
-            return response.text
+            # Verificar se há conteúdo válido na resposta
+            if hasattr(response, 'text') and response.text:
+                return response.text
+            elif hasattr(response, 'parts') and response.parts:
+                return response.parts[0].text
+            else:
+                # Se a resposta foi bloqueada, tentar obter o motivo
+                if hasattr(response, 'prompt_feedback'):
+                    return "Desculpe, não posso responder a essa pergunta por questões de segurança. Por favor, reformule sua pergunta."
+                return "Desculpe, não consegui gerar uma resposta. Tente reformular sua pergunta."
         except Exception as e:
             print(f"\n⚠️  ERRO DETALHADO: {str(e)}")
             print(f"Tipo do erro: {type(e).__name__}")
@@ -65,13 +83,35 @@ class DaVinciPetsChatBot:
         """Envia mensagem e retorna generator para streaming"""
         try:
             response = self.chat_session.send_message(user_message, stream=True)
+            has_content = False
+            
             for chunk in response:
-                if chunk.text:
-                    yield chunk.text
+                try:
+                    if hasattr(chunk, 'text') and chunk.text:
+                        has_content = True
+                        yield chunk.text
+                    elif hasattr(chunk, 'parts') and chunk.parts:
+                        for part in chunk.parts:
+                            if hasattr(part, 'text') and part.text:
+                                has_content = True
+                                yield part.text
+                except (StopIteration, GeneratorExit):
+                    break
+                except Exception as chunk_error:
+                    print(f"\n⚠️  ERRO NO CHUNK: {str(chunk_error)}", file=sys.stderr, flush=True)
+                    continue
+            
+            # Se não houve conteúdo, informar o usuário
+            if not has_content:
+                yield "Desculpe, não consegui gerar uma resposta. Por favor, reformule sua pergunta de forma diferente."
+                
+        except StopIteration:
+            # StopIteration é esperado ao final do generator, não é um erro
+            pass
         except Exception as e:
             print(f"\n⚠️  ERRO DETALHADO: {str(e)}", file=sys.stderr, flush=True)
             print(f"Tipo do erro: {type(e).__name__}", file=sys.stderr, flush=True)
-            error_message = f"Desculpe, ocorreu um erro ao processar a mensagem: {str(e)[:200]}"
+            error_message = f"Desculpe, ocorreu um erro ao processar a mensagem. Tente novamente."
             yield error_message
         
     def reset_conversation(self):

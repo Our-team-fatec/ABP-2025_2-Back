@@ -11,17 +11,9 @@ dotenv.config();
 const PORT = process.env.PORT || 3000;
 const app = express();
 
-const corsOptions = {
-  origin: ["http://localhost:19006", "http://localhost:8081", "http://localhost:3000"],
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-  maxAge: 86400,
-};
-
 // Middlewares globais
 app.use(express.json());
-app.use(cors(corsOptions));
+app.use(cors());
 
 // Rotas
 app.use("/api", routes);

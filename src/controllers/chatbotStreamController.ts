@@ -50,67 +50,68 @@ class ChatbotStreamController {
 
     const convId = conversationId || this.generateConversationId();
 
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
 
-    res.write(`data: ${JSON.stringify({ type: 'start', conversationId: convId })}\n\n`);
+    res.write(`data: ${JSON.stringify({ type: "start", conversationId: convId })}\n\n`);
 
     try {
       const python = this.getChatbotProcess(convId);
-      let buffer = '';
+      let buffer = "";
 
       const onData = (data: Buffer) => {
         buffer += data.toString();
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; 
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
           if (line.trim()) {
             try {
               const chunk = JSON.parse(line);
-              
-              if (chunk.type === 'chunk') {
-                res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunk.text })}\n\n`);
-              } else if (chunk.type === 'done') {
-                res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+
+              if (chunk.type === "chunk") {
+                res.write(`data: ${JSON.stringify({ type: "chunk", text: chunk.text })}\n\n`);
+              } else if (chunk.type === "done") {
+                res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
                 res.end();
-                python.stdout?.removeListener('data', onData);
-              } else if (chunk.type === 'error') {
-                res.write(`data: ${JSON.stringify({ type: 'error', error: chunk.error })}\n\n`);
+                python.stdout?.removeListener("data", onData);
+              } else if (chunk.type === "error") {
+                res.write(`data: ${JSON.stringify({ type: "error", error: chunk.error })}\n\n`);
                 res.end();
-                python.stdout?.removeListener('data', onData);
+                python.stdout?.removeListener("data", onData);
               }
             } catch (e) {
-              console.error('Erro ao parsear chunk:', e);
+              console.error("Erro ao parsear chunk:", e);
             }
           }
         }
       };
 
-      python.stdout?.on('data', onData);
+      python.stdout?.on("data", onData);
 
       const command = {
-        command: 'stream_chat',
-        message: message
+        command: "stream_chat",
+        message: message,
       };
-      python.stdin?.write(JSON.stringify(command) + '\n');
+      python.stdin?.write(JSON.stringify(command) + "\n");
 
       const timeout = setTimeout(() => {
-        python.stdout?.removeListener('data', onData);
-        res.write(`data: ${JSON.stringify({ type: 'error', error: 'Timeout' })}\n\n`);
+        python.stdout?.removeListener("data", onData);
+        res.write(`data: ${JSON.stringify({ type: "error", error: "Timeout" })}\n\n`);
         res.end();
       }, 60000);
 
-      res.on('close', () => {
+      res.on("close", () => {
         clearTimeout(timeout);
-        python.stdout?.removeListener('data', onData);
+        python.stdout?.removeListener("data", onData);
       });
-
     } catch (error) {
-      console.error('Erro no chat stream:', error);
-      res.write(`data: ${JSON.stringify({ type: 'error', error: 'Erro interno do servidor' })}\n\n`);
+      console.error("Erro no chat stream:", error);
+      res.write(
+        `data: ${JSON.stringify({ type: "error", error: "Erro interno do servidor" })}\n\n`,
+      );
       res.end();
     }
   }
@@ -128,14 +129,14 @@ class ChatbotStreamController {
       return res.json({
         status: "success",
         message: "Conversa limpa com sucesso",
-        data: null
+        data: null,
       });
     } catch (error) {
-      console.error('Erro ao limpar conversa:', error);
+      console.error("Erro ao limpar conversa:", error);
       return res.status(500).json({
         status: "error",
         message: "Erro ao limpar conversa",
-        code: 500
+        code: 500,
       });
     }
   }

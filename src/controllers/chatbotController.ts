@@ -52,7 +52,7 @@ class ChatbotController {
       let responseData = "";
       const timeout = setTimeout(() => {
         reject(new Error("Timeout ao aguardar resposta do chatbot"));
-      }, 30000); 
+      }, 30000);
 
       const onData = (data: Buffer) => {
         responseData += data.toString();
@@ -61,7 +61,8 @@ class ChatbotController {
           clearTimeout(timeout);
           python.stdout?.removeListener("data", onData);
           resolve(response);
-        } catch (e) {
+        } catch {
+          // Ignora erros de parse enquanto aguarda dados completos
         }
       };
 
@@ -80,8 +81,8 @@ class ChatbotController {
 
   public async chat(req: Request, res: Response): Promise<Response> {
     try {
-      console.log('📨 Recebendo mensagem do chatbot:', req.body);
-      
+      console.log("📨 Recebendo mensagem do chatbot:", req.body);
+
       const { message, conversationId } = req.body as ChatRequest;
 
       if (!message || message.trim() === "") {
@@ -95,18 +96,16 @@ class ChatbotController {
       }
 
       const convId = conversationId || this.generateConversationId();
-      console.log('🆔 Conversation ID:', convId);
+      console.log("🆔 Conversation ID:", convId);
 
       const python = this.getChatbotProcess(convId);
 
-      console.log('🤖 Enviando para IA...');
+      console.log("🤖 Enviando para IA...");
       const result = await this.sendCommand(python, "chat", message);
-      console.log('✅ Resposta da IA recebida');
+      console.log("✅ Resposta da IA recebida");
 
       if (!result.success) {
-        return res
-          .status(500)
-          .json(ResponseHelper.error("Erro ao processar mensagem com IA", 500));
+        return res.status(500).json(ResponseHelper.error("Erro ao processar mensagem com IA", 500));
       }
 
       return res.json(
@@ -126,9 +125,7 @@ class ChatbotController {
       const { conversationId } = req.params;
 
       if (!conversationId) {
-        return res
-          .status(400)
-          .json(ResponseHelper.error("ID da conversa é obrigatório", 400));
+        return res.status(400).json(ResponseHelper.error("ID da conversa é obrigatório", 400));
       }
 
       const python = activeChatbots.get(conversationId);
@@ -150,9 +147,7 @@ class ChatbotController {
       const { conversationId } = req.params;
 
       if (!conversationId) {
-        return res
-          .status(400)
-          .json(ResponseHelper.error("ID da conversa é obrigatório", 400));
+        return res.status(400).json(ResponseHelper.error("ID da conversa é obrigatório", 400));
       }
 
       const python = activeChatbots.get(conversationId);
@@ -185,9 +180,7 @@ class ChatbotController {
       const { conversationId } = req.params;
 
       if (!conversationId) {
-        return res
-          .status(400)
-          .json(ResponseHelper.error("ID da conversa é obrigatório", 400));
+        return res.status(400).json(ResponseHelper.error("ID da conversa é obrigatório", 400));
       }
 
       const python = activeChatbots.get(conversationId);
@@ -232,7 +225,7 @@ class ChatbotController {
           geminiConfigured: !!geminiApiKey,
         }),
       );
-    } catch (error) {
+    } catch {
       return res.status(500).json(ResponseHelper.error("Chatbot indisponível", 500));
     }
   }

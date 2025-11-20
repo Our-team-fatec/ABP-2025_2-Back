@@ -11,11 +11,9 @@ dotenv.config();
 const PORT = process.env.PORT || 3000;
 const app = express();
 
-
 // Middlewares globais
 app.use(express.json());
 app.use(cors());
-
 
 // Rotas
 app.use("/api", routes);

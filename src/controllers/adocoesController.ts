@@ -18,7 +18,9 @@ class AdocoesController {
       if (!pet_id || !descricao || !endereco || !contato) {
         return res
           .status(400)
-          .json(ResponseHelper.error("Pet ID, descrição, endereço e contato são obrigatórios", 400));
+          .json(
+            ResponseHelper.error("Pet ID, descrição, endereço e contato são obrigatórios", 400),
+          );
       }
 
       // Verificar se o pet existe e pertence ao usuário

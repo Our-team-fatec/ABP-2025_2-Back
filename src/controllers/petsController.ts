@@ -21,7 +21,10 @@ class PetsController {
         return res
           .status(400)
           .json(
-            ResponseHelper.error("Nome, espécie, raça, porte, gênero, idade e cor são obrigatórios", 400),
+            ResponseHelper.error(
+              "Nome, espécie, raça, porte, gênero, idade e cor são obrigatórios",
+              400,
+            ),
           );
       }
 
@@ -31,9 +34,7 @@ class PetsController {
       if (isNaN(idade) || idade < 0) {
         return res
           .status(400)
-          .json(
-            ResponseHelper.error("Idade deve ser um número válido e não negativo", 400),
-          );
+          .json(ResponseHelper.error("Idade deve ser um número válido e não negativo", 400));
       }
 
       if (!Object.values(Especie).includes(especie)) {
@@ -240,9 +241,7 @@ class PetsController {
         if (isNaN(idade) || idade < 0) {
           return res
             .status(400)
-            .json(
-              ResponseHelper.error("Idade deve ser um número válido e não negativo", 400),
-            );
+            .json(ResponseHelper.error("Idade deve ser um número válido e não negativo", 400));
         }
       }
 

@@ -35,8 +35,10 @@ class ChatbotController {
       // Verificar limite de processos ativos
       if (activeChatbots.size >= MAX_ACTIVE_CHATBOTS) {
         // Remover o processo mais antigo
-        const oldestId = activeChatbots.keys().next().value;
-        this.killChatbot(oldestId);
+        const oldestId = activeChatbots.keys().next().value as string;
+        if (oldestId) {
+          this.killChatbot(oldestId);
+        }
       }
 
       const pythonScript = path.join(__dirname, "..", "IA", "main.py");

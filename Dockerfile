@@ -21,12 +21,9 @@ COPY . .
 # Gerar cliente do Prisma
 RUN npx prisma generate
 
-# Build da aplicação
-RUN npm run build
-
 # Expor porta
 EXPOSE 3000
 
-# Comando padrão para produção
-CMD ["npm", "start"]
+# Comando padrão
+CMD ["npm", "run", "dev"]
     

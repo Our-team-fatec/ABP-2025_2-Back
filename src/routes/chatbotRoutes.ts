@@ -1,13 +1,23 @@
 import { Router } from "express";
 import chatbotController from "../controllers/chatbotController";
 import chatbotStreamController from "../controllers/chatbotStreamController";
+import { timeoutMiddleware } from "../middlewares/timeoutMiddleware";
 
 const router = Router();
 
-router.post("/chat", chatbotController.chat.bind(chatbotController));
+// Aplicar timeout de 12 segundos nas rotas de chat
+router.post(
+  "/chat",
+  timeoutMiddleware(12000),
+  chatbotController.chat.bind(chatbotController),
+);
 
-// Nova rota de streaming
-router.post("/chat/stream", chatbotStreamController.chatStream.bind(chatbotStreamController));
+// Nova rota de streaming (timeout maior pois é streaming)
+router.post(
+  "/chat/stream",
+  timeoutMiddleware(25000),
+  chatbotStreamController.chatStream.bind(chatbotStreamController),
+);
 
 router.post(
   "/conversation/:conversationId/clear",

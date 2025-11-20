@@ -8,25 +8,77 @@ interface ChatRequest {
 }
 
 const activeChatbots: Map<string, ChildProcess> = new Map();
+const MAX_ACTIVE_CHATBOTS = 10; // Limite de processos simultâneos
+const CHATBOT_IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutos de inatividade
+const chatbotTimers: Map<string, NodeJS.Timeout> = new Map();
 
 class ChatbotStreamController {
   private getChatbotProcess(conversationId: string): ChildProcess {
+    // Limpar timer de inatividade se já existe
+    this.resetIdleTimer(conversationId);
+
     if (!activeChatbots.has(conversationId)) {
+      // Verificar limite de processos ativos
+      if (activeChatbots.size >= MAX_ACTIVE_CHATBOTS) {
+        // Remover o processo mais antigo
+        const oldestId = activeChatbots.keys().next().value;
+        this.killChatbot(oldestId);
+      }
+
       const pythonScript = path.join(__dirname, "..", "IA", "main.py");
       const python = spawn("python", [pythonScript, "--api"]);
 
       activeChatbots.set(conversationId, python);
 
       python.on("close", () => {
-        activeChatbots.delete(conversationId);
+        this.cleanupChatbot(conversationId);
+      });
+
+      python.on("error", (error) => {
+        console.error(`[Chatbot Stream ${conversationId}] Erro no processo:`, error);
+        this.cleanupChatbot(conversationId);
       });
 
       python.stderr.on("data", (data) => {
         console.error(`[Chatbot Stream ${conversationId}] Erro:`, data.toString());
       });
+
+      // Configurar timer de inatividade
+      this.resetIdleTimer(conversationId);
     }
 
     return activeChatbots.get(conversationId)!;
+  }
+
+  private resetIdleTimer(conversationId: string): void {
+    // Limpar timer existente
+    if (chatbotTimers.has(conversationId)) {
+      clearTimeout(chatbotTimers.get(conversationId)!);
+    }
+
+    // Criar novo timer de inatividade
+    const timer = setTimeout(() => {
+      console.log(`[Chatbot Stream ${conversationId}] Timeout por inatividade`);
+      this.killChatbot(conversationId);
+    }, CHATBOT_IDLE_TIMEOUT);
+
+    chatbotTimers.set(conversationId, timer);
+  }
+
+  private cleanupChatbot(conversationId: string): void {
+    if (chatbotTimers.has(conversationId)) {
+      clearTimeout(chatbotTimers.get(conversationId)!);
+      chatbotTimers.delete(conversationId);
+    }
+    activeChatbots.delete(conversationId);
+  }
+
+  private killChatbot(conversationId: string): void {
+    const python = activeChatbots.get(conversationId);
+    if (python) {
+      python.kill();
+      this.cleanupChatbot(conversationId);
+    }
   }
 
   private generateConversationId(): string {
@@ -97,11 +149,12 @@ class ChatbotStreamController {
       };
       python.stdin?.write(JSON.stringify(command) + "\n");
 
+      // Timeout reduzido para 20s - evita travar outras requisições
       const timeout = setTimeout(() => {
         python.stdout?.removeListener("data", onData);
-        res.write(`data: ${JSON.stringify({ type: "error", error: "Timeout" })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: "error", error: "Timeout - tente uma pergunta mais simples" })}\n\n`);
         res.end();
-      }, 60000);
+      }, 20000);
 
       res.on("close", () => {
         clearTimeout(timeout);

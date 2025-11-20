@@ -22,25 +22,77 @@ interface PythonResponse {
 }
 
 const activeChatbots: Map<string, ChildProcess> = new Map();
+const MAX_ACTIVE_CHATBOTS = 10; // Limite de processos simultâneos
+const CHATBOT_IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutos de inatividade
+const chatbotTimers: Map<string, NodeJS.Timeout> = new Map();
 
 class ChatbotController {
   private getChatbotProcess(conversationId: string): ChildProcess {
+    // Limpar timer de inatividade se já existe
+    this.resetIdleTimer(conversationId);
+
     if (!activeChatbots.has(conversationId)) {
+      // Verificar limite de processos ativos
+      if (activeChatbots.size >= MAX_ACTIVE_CHATBOTS) {
+        // Remover o processo mais antigo
+        const oldestId = activeChatbots.keys().next().value;
+        this.killChatbot(oldestId);
+      }
+
       const pythonScript = path.join(__dirname, "..", "IA", "main.py");
       const python = spawn("python", [pythonScript, "--api"]);
 
       activeChatbots.set(conversationId, python);
 
       python.on("close", () => {
-        activeChatbots.delete(conversationId);
+        this.cleanupChatbot(conversationId);
+      });
+
+      python.on("error", (error) => {
+        console.error(`[Chatbot ${conversationId}] Erro no processo:`, error);
+        this.cleanupChatbot(conversationId);
       });
 
       python.stderr.on("data", (data) => {
         console.error(`[Chatbot ${conversationId}] Erro:`, data.toString());
       });
+
+      // Configurar timer de inatividade
+      this.resetIdleTimer(conversationId);
     }
 
     return activeChatbots.get(conversationId)!;
+  }
+
+  private resetIdleTimer(conversationId: string): void {
+    // Limpar timer existente
+    if (chatbotTimers.has(conversationId)) {
+      clearTimeout(chatbotTimers.get(conversationId)!);
+    }
+
+    // Criar novo timer de inatividade
+    const timer = setTimeout(() => {
+      console.log(`[Chatbot ${conversationId}] Timeout por inatividade`);
+      this.killChatbot(conversationId);
+    }, CHATBOT_IDLE_TIMEOUT);
+
+    chatbotTimers.set(conversationId, timer);
+  }
+
+  private cleanupChatbot(conversationId: string): void {
+    if (chatbotTimers.has(conversationId)) {
+      clearTimeout(chatbotTimers.get(conversationId)!);
+      chatbotTimers.delete(conversationId);
+    }
+    activeChatbots.delete(conversationId);
+  }
+
+  private killChatbot(conversationId: string): void {
+    const python = activeChatbots.get(conversationId);
+    if (python) {
+      python.kill();
+      this.cleanupChatbot(conversationId);
+    }
   }
 
   private async sendCommand(
@@ -50,9 +102,13 @@ class ChatbotController {
   ): Promise<PythonResponse> {
     return new Promise((resolve, reject) => {
       let responseData = "";
+      
+      // Timeout reduzido para 10s - evita travar outras requisições
       const timeout = setTimeout(() => {
+        python.stdout?.removeListener("data", onData);
+        python.stderr?.removeListener("data", onError);
         reject(new Error("Timeout ao aguardar resposta do chatbot"));
-      }, 30000);
+      }, 10000);
 
       const onData = (data: Buffer) => {
         responseData += data.toString();
@@ -60,6 +116,7 @@ class ChatbotController {
           const response = JSON.parse(responseData);
           clearTimeout(timeout);
           python.stdout?.removeListener("data", onData);
+          python.stderr?.removeListener("data", onError);
           resolve(response);
         } catch {
           // Ignora erros de parse enquanto aguarda dados completos
@@ -68,6 +125,8 @@ class ChatbotController {
 
       const onError = (data: Buffer) => {
         clearTimeout(timeout);
+        python.stdout?.removeListener("data", onData);
+        python.stderr?.removeListener("data", onError);
         reject(new Error(data.toString()));
       };
 
@@ -101,8 +160,12 @@ class ChatbotController {
       const python = this.getChatbotProcess(convId);
 
       console.log("🤖 Enviando para IA...");
+      const startTime = Date.now();
+      
       const result = await this.sendCommand(python, "chat", message);
-      console.log("✅ Resposta da IA recebida");
+      
+      const endTime = Date.now();
+      console.log(`✅ Resposta da IA recebida em ${endTime - startTime}ms`);
 
       if (!result.success) {
         return res.status(500).json(ResponseHelper.error("Erro ao processar mensagem com IA", 500));

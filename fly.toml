@@ -7,6 +7,10 @@ app = 'davincipets-server'
 primary_region = 'gru'
 
 [build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
 
 [deploy]
   release_command = 'npx prisma migrate deploy'

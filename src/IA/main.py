@@ -51,7 +51,7 @@ class DaVinciPetsChatBot:
         """ 
         
         self.model = genai.GenerativeModel(
-            model_name='models/gemini-1.5-flash', 
+            model_name='models/gemini-2.5-flash', 
             generation_config=self.generation_config,
             safety_settings=self.safety_settings,
         )
